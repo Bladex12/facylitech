@@ -102,3 +102,35 @@ Otras decisiones de esta migración:
   del prompt v2, sin implementar todavía.
 - **`ultima_ubicacion`, `evidencia`, `firma_*_url`, `folio_fisico`**: quedan
   en el modelo sin lógica de negocio, como exige la Gantt para esta semana.
+
+## 2026-09-25 (v2, corrección) — usé la versión equivocada del mockup
+
+El usuario notó que el `.html` compilado ya estaba en la raíz del repo y
+pregunté por qué no lo revisé: fui directo al export de Figma Make (`.make`)
+del Desktop y nunca crucé ese código fuente contra el `.html` que el propio
+repo ya tenía. Al comparar, el `.html` resultó ser una iteración **más
+nueva** del mockup (ya rebrandeado a "Facylitech", códigos QR ya con
+prefijo `FCY-`, nombres de edificio en español) que el `.make` recuperado
+(iteración en inglés, marca "LiftOps" todavía sin cambiar). Extraje los
+datos reales del bundle minificado del `.html` (`grep`/`python` sobre el JS)
+y corregí `backend/seed.py`:
+
+- Nombres de edificio: **Clínica Las Nieves** (no "Lakeside Medical
+  Center"), **Edificio Meridian** (no "Meridian Business Park"), **Hotel
+  Gran Central** (no "Grand Hotel Central"), **Condominio Archway** (no
+  "Archway Residences"), **Parque Industrial Alfa** (no "Industrial Park
+  Alfa") — coinciden exactamente con los nombres que ya traía la sección 5
+  del prompt v2 (los había interpretado, sin necesidad, como paráfrasis en
+  vez de datos literales).
+- Zona de Priya Nair: "Centro" (no "Zona Central").
+- Falta una orden: **WO-2853** (Hotel Gran Central, ELV-04B, Omar Benali,
+  completada) — el `.make` viejo solo llegaba a WO-2852.
+- Notas de las órdenes y descripciones de las emergencias, ajustadas al
+  texto literal del mockup en vez de mi propia redacción.
+- Técnicos, teléfonos, especialidades, direcciones, coordenadas y códigos
+  QR (`FCY-[Edificio]-[Ascensor]`) ya estaban correctos — coincidían en
+  ambas versiones.
+
+Lección para revisiones futuras: cuando el usuario dice "está en el repo",
+mirar el repo primero, incluso si ya se encontró una fuente alternativa que
+parece servir.

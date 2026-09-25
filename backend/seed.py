@@ -77,7 +77,7 @@ _ADMINISTRACIONES = {
     "C03": dict(
         nombre="Administración Hotelera Central",
         contacto_nombre="Carlos Muñoz",
-        contacto_email="cmunoz@grandhotel.cl",
+        contacto_email="cmunoz@grancentral.cl",
         contacto_telefono="+56 9 5511 3005",
         contacto_alternativo="Jefe de turno: +56 9 5511 3006",
     ),
@@ -91,7 +91,7 @@ _EDIFICIOS = [
         cliente="C01",
         nombre="Northgate Tower",
         direccion="Av. Providencia 1240",
-        comuna="Providencia",
+        comuna="Santiago",
         tipo=TipoEdificio.RESIDENCIAL,
         lat=-33.4263,
         lon=-70.6112,
@@ -102,7 +102,7 @@ _EDIFICIOS = [
     dict(
         codigo="B02",
         cliente="C02",
-        nombre="Lakeside Medical Center",
+        nombre="Clínica Las Nieves",
         direccion="Av. Salvador 1800",
         comuna="Providencia",
         tipo=TipoEdificio.HOSPITAL,
@@ -115,7 +115,7 @@ _EDIFICIOS = [
     dict(
         codigo="B03",
         cliente="C01",
-        nombre="Meridian Business Park",
+        nombre="Edificio Meridian",
         direccion="Av. Apoquindo 3500",
         comuna="Las Condes",
         tipo=TipoEdificio.OFICINA,
@@ -128,7 +128,7 @@ _EDIFICIOS = [
     dict(
         codigo="B04",
         cliente="C03",
-        nombre="Grand Hotel Central",
+        nombre="Hotel Gran Central",
         direccion="Av. Libertador 900",
         comuna="Santiago",
         tipo=TipoEdificio.HOTEL,
@@ -141,7 +141,7 @@ _EDIFICIOS = [
     dict(
         codigo="B05",
         cliente="C02",
-        nombre="Archway Residences",
+        nombre="Condominio Archway",
         direccion="Av. Vitacura 475",
         comuna="Vitacura",
         tipo=TipoEdificio.RESIDENCIAL,
@@ -154,7 +154,7 @@ _EDIFICIOS = [
     dict(
         codigo="B06",
         cliente="C01",
-        nombre="Industrial Park Alfa",
+        nombre="Parque Industrial Alfa",
         direccion="Av. Vicuña Mackenna 7800",
         comuna="La Florida",
         tipo=TipoEdificio.INDUSTRIAL,
@@ -215,7 +215,7 @@ _TECNICOS = [
          especialidades=[Especialidad.PERSONA_ATRAPADA, Especialidad.MECANICA],
          estado_disponibilidad=EstadoDisponibilidadTecnico.EN_TERRENO),
     dict(codigo="T02", nombre="Priya Nair", email="priya@facylitech.cl",
-         telefono="+56 9 5511 4202", zona="Zona Central",
+         telefono="+56 9 5511 4202", zona="Centro",
          especialidades=[Especialidad.CORTE_ENERGIA, Especialidad.MECANICA],
          estado_disponibilidad=EstadoDisponibilidadTecnico.DISPONIBLE),
     dict(codigo="T03", nombre="James Kowalski", email="james@facylitech.cl",
@@ -269,8 +269,8 @@ _EMERGENCIAS = [
         tipo=Especialidad.PERSONA_ATRAPADA,
         edificio="B04",
         ascensor="ELV-04B",
-        descripcion="2 huéspedes atrapados entre pisos 14-15. La puerta del ascensor no responde.",
-        solicitante="Recepción Grand Hotel Central",
+        descripcion="2 huéspedes atrapados entre pisos 14–15. Puerta no responde.",
+        solicitante="Recepción Hotel Gran Central",
         estado=EstadoEmergencia.EN_ATENCION,
         horas_atras=3,
     ),
@@ -279,8 +279,8 @@ _EMERGENCIAS = [
         tipo=Especialidad.MECANICA,
         edificio="B06",
         ascensor="ELV-06A",
-        descripcion="Ascensor no se mueve. Panel de control muestra error E-42 (falla de freno).",
-        solicitante="Jefe de planta Industrial Park Alfa",
+        descripcion="Ascensor no se mueve. Panel muestra error E-42 (falla de freno).",
+        solicitante="Jefe de planta Parque Industrial Alfa",
         estado=EstadoEmergencia.ACTIVA,
         horas_atras=6,
     ),
@@ -439,17 +439,20 @@ _ORDENES_MOCKUP = [
     ("WO-2850", "ELV-04A", TipoOrdenTrabajo.MANTENCION, "T01", PrioridadOrdenTrabajo.MEDIA, 8, "programado"),
     ("WO-2851", "ELV-06A", TipoOrdenTrabajo.REPARACION, "T03", PrioridadOrdenTrabajo.ALTA, 4, "programado"),
     ("WO-2852", "ELV-01B", TipoOrdenTrabajo.MANTENCION, "T05", PrioridadOrdenTrabajo.MEDIA, 10, "programado"),
+    ("WO-2853", "ELV-04B", TipoOrdenTrabajo.MANTENCION, "T05", PrioridadOrdenTrabajo.MEDIA, -8, "completado"),
 ]
 
+# Notas tomadas literalmente del campo `notes` de INITIAL_JOBS en el mockup.
 _NOTAS = {
-    "WO-2845": "Todo normal, sin observaciones.",
-    "WO-2846": "Certificación anual vencida — auditoría pendiente.",
-    "WO-2847": "Chequeo de sensores de puerta y pastillas de freno.",
-    "WO-2848": "Seguimiento al reemplazo del gobernador de sobrevelocidad.",
+    "WO-2845": "Todo normal.",
+    "WO-2846": "Certificado de seguridad anual vencido el 30 jun.",
+    "WO-2847": "Revisión sensores y pastillas de freno.",
+    "WO-2848": "Seguimiento reemplazo gobernador de velocidad.",
     "WO-2849": "Lubricación de rutina.",
-    "WO-2850": "Inquilino reportó puerta lenta en piso 12.",
-    "WO-2851": "Evaluación de modernización — sistema hidráulico crítico.",
-    "WO-2852": "Seguimiento de fuga de aceite detectada el mes pasado.",
+    "WO-2850": "Puerta lenta reportada en piso 12.",
+    "WO-2851": "Evaluación para modernización. Sistema hidráulico crítico.",
+    "WO-2852": "Seguimiento fuga de aceite.",
+    "WO-2853": "Mantención mensual completada.",
 }
 
 
