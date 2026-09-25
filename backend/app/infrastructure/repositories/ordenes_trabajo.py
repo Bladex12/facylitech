@@ -18,12 +18,14 @@ class SqlOrdenTrabajoRepository:
         self.session = session
 
     def _con_relaciones(self, stmt):
+        # populate_existing: ver nota en SqlPapeletaRepository._con_relaciones.
         return stmt.options(
             selectinload(OrdenTrabajo.ascensor).selectinload(Ascensor.edificio),
             selectinload(OrdenTrabajo.tecnico),
             selectinload(OrdenTrabajo.pauta).selectinload(PautaMantencion.items),
             selectinload(OrdenTrabajo.papeleta),
-        )
+            selectinload(OrdenTrabajo.emergencia),
+        ).execution_options(populate_existing=True)
 
     async def listar(
         self,

@@ -4,7 +4,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.infrastructure.db.models import Ascensor
+from app.domain.enums import EstadoOrdenTrabajo
+from app.infrastructure.db.models import Ascensor, OrdenTrabajo, Papeleta, PautaMantencion
 
 
 class SqlAscensorRepository:
@@ -33,3 +34,22 @@ class SqlAscensorRepository:
         await self.session.commit()
         await self.session.refresh(ascensor, attribute_names=["edificio"])
         return ascensor
+
+    async def bitacora(self, ascensor_id: UUID) -> list[OrdenTrabajo]:
+        """Query (no tabla): órdenes completadas de un ascensor con su papeleta y piezas."""
+        stmt = (
+            select(OrdenTrabajo)
+            .where(
+                OrdenTrabajo.ascensor_id == ascensor_id,
+                OrdenTrabajo.estado == EstadoOrdenTrabajo.COMPLETADO,
+            )
+            .options(
+                selectinload(OrdenTrabajo.papeleta).selectinload(Papeleta.piezas),
+                selectinload(OrdenTrabajo.papeleta).selectinload(Papeleta.items),
+                selectinload(OrdenTrabajo.tecnico),
+                selectinload(OrdenTrabajo.pauta).selectinload(PautaMantencion.items),
+            )
+            .order_by(OrdenTrabajo.fecha_programada.desc())
+        )
+        rows = (await self.session.execute(stmt)).scalars().all()
+        return list(rows)

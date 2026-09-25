@@ -29,7 +29,11 @@ async def obtener(id_: UUID, repo: PautaRepoDep):
 async def crear(datos: PautaCrear, repo: PautaRepoDep):
     pauta = PautaMantencion(
         nombre=datos.nombre,
+        tipo_equipo=datos.tipo_equipo,
         descripcion=datos.descripcion,
-        items=[PautaItem(orden=i.orden, descripcion=i.descripcion) for i in datos.items],
+        items=[
+            PautaItem(orden=i.orden, descripcion=i.descripcion, meses=i.meses, activo=i.activo)
+            for i in datos.items
+        ],
     )
     return await crear_pauta(repo, pauta)

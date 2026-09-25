@@ -4,8 +4,10 @@ from app.application.interfaces.repositories import EdificioRepository
 from app.infrastructure.db.models import Edificio
 
 
-async def listar_edificios(repo: EdificioRepository, limit: int, offset: int):
-    return await repo.listar(limit, offset)
+async def listar_edificios(
+    repo: EdificioRepository, limit: int, offset: int, administracion_id: UUID | None = None
+):
+    return await repo.listar(limit, offset, administracion_id)
 
 
 async def obtener_edificio(repo: EdificioRepository, id_: UUID) -> Edificio | None:

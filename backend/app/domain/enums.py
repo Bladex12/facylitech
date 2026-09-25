@@ -6,6 +6,12 @@ class RolUsuario(StrEnum):
     TECNICO = "tecnico"
 
 
+class TipoCliente(StrEnum):
+    COMUNIDAD = "comunidad"
+    FONDO_INVERSION = "fondo_inversion"
+    OTRO = "otro"
+
+
 class TipoEdificio(StrEnum):
     RESIDENCIAL = "residencial"
     HOSPITAL = "hospital"
@@ -14,15 +20,37 @@ class TipoEdificio(StrEnum):
     INDUSTRIAL = "industrial"
 
 
-class EstadoOperativoAscensor(StrEnum):
-    OPERATIVO = "operativo"
-    DETENIDO = "detenido"
-    EN_MANTENCION = "en_mantencion"
+class TipoEquipo(StrEnum):
+    ELECTROMECANICO = "electromecanico"
+    HIDRAULICO = "hidraulico"
+    ELECTROHIDRAULICO = "electrohidraulico"
+
+
+class EstadoAscensor(StrEnum):
+    OPERACIONAL = "operacional"
+    ADVERTENCIA = "advertencia"
+    CRITICO = "critico"
+    SIN_SENAL = "sin_senal"
+
+
+class Especialidad(StrEnum):
+    PERSONA_ATRAPADA = "persona_atrapada"
+    MECANICA = "mecanica"
+    CORTE_ENERGIA = "corte_energia"
+    INCENDIO = "incendio"
+    INUNDACION = "inundacion"
+
+
+class EstadoDisponibilidadTecnico(StrEnum):
+    DISPONIBLE = "disponible"
+    EN_TERRENO = "en_terreno"
 
 
 class TipoOrdenTrabajo(StrEnum):
     MANTENCION = "mantencion"
     REPARACION = "reparacion"
+    INSPECCION = "inspeccion"
+    PRIMERA_VISITA = "primera_visita"
     EMERGENCIA = "emergencia"
 
 
@@ -43,6 +71,12 @@ class EstadoOrdenTrabajo(StrEnum):
 class EstadoPapeleta(StrEnum):
     BORRADOR = "borrador"
     ENVIADA = "enviada"
+
+
+class EstadoEmergencia(StrEnum):
+    ACTIVA = "activa"
+    EN_ATENCION = "en_atencion"
+    CERRADA = "cerrada"
 
 
 class Semaforo(StrEnum):

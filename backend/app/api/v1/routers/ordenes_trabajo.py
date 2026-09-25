@@ -65,6 +65,7 @@ async def crear(datos: OrdenTrabajoCrear, repo: OrdenRepoDep):
         ascensor_id=datos.ascensor_id,
         tecnico_id=datos.tecnico_id,
         pauta_id=datos.pauta_id,
+        emergencia_id=datos.emergencia_id,
         fecha_programada=datos.fecha_programada,
         descripcion=datos.descripcion,
         codigo="",
@@ -101,4 +102,4 @@ async def crear_papeleta(id_: UUID, orden_repo: OrdenRepoDep, papeleta_repo: Pap
         orden = await obtener_orden(orden_repo, id_)
     except NoEncontradoError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return await crear_papeleta_desde_orden(papeleta_repo, orden)
+    return await crear_papeleta_desde_orden(papeleta_repo, orden, mes=datetime.now(UTC).month)

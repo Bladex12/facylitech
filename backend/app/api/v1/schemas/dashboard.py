@@ -1,9 +1,15 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.domain.enums import EstadoOrdenTrabajo, PrioridadOrdenTrabajo, Semaforo, TipoOrdenTrabajo
+from app.domain.enums import (
+    Especialidad,
+    EstadoOrdenTrabajo,
+    PrioridadOrdenTrabajo,
+    Semaforo,
+    TipoOrdenTrabajo,
+)
 
 
 class OrdenCalendarioItem(BaseModel):
@@ -23,8 +29,17 @@ class DiaCalendario(BaseModel):
     ordenes: list[OrdenCalendarioItem]
 
 
+class EmergenciaBanner(BaseModel):
+    id: UUID
+    codigo: str
+    tipo: Especialidad
+    edificio_nombre: str
+    descripcion: str | None
+    reportada_at: datetime
+
+
 class CalendarioMesOut(BaseModel):
     anio: int
     mes: int
     dias: list[DiaCalendario]
-    emergencias_abiertas: int
+    emergencias_abiertas: list[EmergenciaBanner]

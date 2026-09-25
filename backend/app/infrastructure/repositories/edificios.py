@@ -10,15 +10,17 @@ class SqlEdificioRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def listar(self, limit: int, offset: int) -> tuple[list[Edificio], int]:
+    async def listar(
+        self, limit: int, offset: int, administracion_id: UUID | None = None
+    ) -> tuple[list[Edificio], int]:
+        stmt = select(Edificio)
         count_stmt = select(func.count()).select_from(Edificio)
+        if administracion_id is not None:
+            stmt = stmt.where(Edificio.administracion_id == administracion_id)
+            count_stmt = count_stmt.where(Edificio.administracion_id == administracion_id)
         total = (await self.session.execute(count_stmt)).scalar_one()
         rows = (
-            (
-                await self.session.execute(
-                    select(Edificio).order_by(Edificio.nombre).limit(limit).offset(offset)
-                )
-            )
+            (await self.session.execute(stmt.order_by(Edificio.nombre).limit(limit).offset(offset)))
             .scalars()
             .all()
         )

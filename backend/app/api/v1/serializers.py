@@ -19,6 +19,7 @@ def construir_orden_out(orden: OrdenTrabajo, ahora: datetime) -> OrdenTrabajoOut
         semaforo=semaforo,
         ascensor=AscensorResumen.model_validate(orden.ascensor),
         tecnico=TecnicoResumen.model_validate(orden.tecnico) if orden.tecnico else None,
+        emergencia_id=orden.emergencia_id,
         fecha_programada=orden.fecha_programada,
         inicio_real=orden.inicio_real,
         fin_real=orden.fin_real,

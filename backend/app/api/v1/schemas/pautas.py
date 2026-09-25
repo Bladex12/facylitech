@@ -2,10 +2,14 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.domain.enums import TipoEquipo
+
 
 class PautaItemBase(BaseModel):
     orden: int = 0
     descripcion: str
+    meses: list[int]
+    activo: bool = True
 
 
 class PautaItemCrear(PautaItemBase):
@@ -20,6 +24,7 @@ class PautaItemOut(PautaItemBase):
 
 class PautaBase(BaseModel):
     nombre: str
+    tipo_equipo: TipoEquipo
     descripcion: str | None = None
 
 

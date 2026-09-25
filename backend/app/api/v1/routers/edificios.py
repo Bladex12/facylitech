@@ -16,22 +16,26 @@ def _a_out(edificio: Edificio) -> EdificioOut:
     lat, lon = coords_desde_punto(edificio.ubicacion) or (0.0, 0.0)
     return EdificioOut(
         id=edificio.id,
+        administracion_id=edificio.administracion_id,
         nombre=edificio.nombre,
         direccion=edificio.direccion,
         comuna=edificio.comuna,
         tipo=edificio.tipo,
         ubicacion=Coordenadas(lat=lat, lon=lon),
-        contacto_nombre=edificio.contacto_nombre,
-        contacto_email=edificio.contacto_email,
-        contacto_telefono=edificio.contacto_telefono,
         manas=edificio.manas,
         instrucciones_reinicio=edificio.instrucciones_reinicio,
+        vencimiento_certificacion=edificio.vencimiento_certificacion,
     )
 
 
 @router.get("", response_model=Pagina[EdificioOut])
-async def listar(repo: EdificioRepoDep, limit: int = Query(20, ge=1, le=100), offset: int = 0):
-    items, total = await listar_edificios(repo, limit, offset)
+async def listar(
+    repo: EdificioRepoDep,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = 0,
+    administracion_id: UUID | None = None,
+):
+    items, total = await listar_edificios(repo, limit, offset, administracion_id)
     return Pagina(items=[_a_out(e) for e in items], total=total, limit=limit, offset=offset)
 
 

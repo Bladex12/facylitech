@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -7,16 +8,15 @@ from app.domain.enums import TipoEdificio
 
 
 class EdificioBase(BaseModel):
+    administracion_id: UUID
     nombre: str
     direccion: str
     comuna: str
     tipo: TipoEdificio
     ubicacion: Coordenadas
-    contacto_nombre: str | None = None
-    contacto_email: str | None = None
-    contacto_telefono: str | None = None
     manas: str | None = None
     instrucciones_reinicio: str | None = None
+    vencimiento_certificacion: date | None = None
 
 
 class EdificioCrear(EdificioBase):

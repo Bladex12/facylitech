@@ -22,11 +22,28 @@ class ChecklistItemMarcar(BaseModel):
     comentario: str | None = None
 
 
+class PiezaOut(BaseModel):
+    id: UUID
+    nombre: str
+    marca: str | None
+    es_original: bool
+
+    model_config = {"from_attributes": True}
+
+
+class PiezaCrear(BaseModel):
+    nombre: str
+    marca: str | None = None
+    es_original: bool = True
+
+
 class PapeletaActualizar(BaseModel):
     observaciones: str | None = None
     falla_detectada: str | None = None
     trabajo_realizado: str | None = None
     causada_por_terceros: bool | None = None
+    folio_fisico: str | None = None
+    receptor_nombre: str | None = None
 
 
 class PapeletaOut(BaseModel):
@@ -39,6 +56,12 @@ class PapeletaOut(BaseModel):
     hora_inicio: datetime | None
     hora_fin: datetime | None
     estado: EstadoPapeleta
-    checklist: list[ChecklistItemOut]
+    folio_fisico: str | None
+    receptor_nombre: str | None
+    items: list[ChecklistItemOut]
+    piezas: list[PiezaOut]
+    # Total de ítems de la pauta (sin filtrar por mes); permite mostrar
+    # "Este mes corresponden X de Y ítems". None si la orden no tiene pauta.
+    total_items_pauta: int | None = None
 
     model_config = {"from_attributes": True}

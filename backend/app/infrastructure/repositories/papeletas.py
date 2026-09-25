@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.infrastructure.db.models import Papeleta, PapeletaChecklistItem
+from app.infrastructure.db.models import Papeleta, PapeletaItem, PiezaReemplazada
 
 
 class SqlPapeletaRepository:
@@ -12,9 +12,14 @@ class SqlPapeletaRepository:
         self.session = session
 
     def _con_relaciones(self, stmt):
+        # populate_existing: la sesión usa expire_on_commit=False, así que sin esto
+        # una Papeleta ya cacheada en el identity map no refresca sus colecciones
+        # (items/piezas/evidencias) tras un INSERT relacionado en la misma sesión.
         return stmt.options(
-            selectinload(Papeleta.checklist), selectinload(Papeleta.evidencias)
-        )
+            selectinload(Papeleta.items),
+            selectinload(Papeleta.piezas),
+            selectinload(Papeleta.evidencias),
+        ).execution_options(populate_existing=True)
 
     async def obtener(self, id_: UUID) -> Papeleta | None:
         stmt = self._con_relaciones(select(Papeleta).where(Papeleta.id == id_))
@@ -35,10 +40,22 @@ class SqlPapeletaRepository:
         await self.session.commit()
         return await self.obtener(papeleta.id)
 
-    async def obtener_item(self, item_id: UUID) -> PapeletaChecklistItem | None:
-        return await self.session.get(PapeletaChecklistItem, item_id)
+    async def obtener_item(self, item_id: UUID) -> PapeletaItem | None:
+        return await self.session.get(PapeletaItem, item_id)
 
-    async def guardar_item(self, item: PapeletaChecklistItem) -> PapeletaChecklistItem:
+    async def guardar_item(self, item: PapeletaItem) -> PapeletaItem:
         await self.session.commit()
         await self.session.refresh(item)
         return item
+
+    async def agregar_pieza(self, pieza: PiezaReemplazada) -> Papeleta:
+        self.session.add(pieza)
+        await self.session.commit()
+        return await self.obtener(pieza.papeleta_id)
+
+    async def eliminar_pieza(self, papeleta_id: UUID, pieza_id: UUID) -> Papeleta:
+        pieza = await self.session.get(PiezaReemplazada, pieza_id)
+        if pieza is not None and pieza.papeleta_id == papeleta_id:
+            await self.session.delete(pieza)
+            await self.session.commit()
+        return await self.obtener(papeleta_id)
