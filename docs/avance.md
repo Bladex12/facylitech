@@ -90,6 +90,41 @@ vencidas).
 
 **Pendiente:** ninguno para el alcance de esta semana.
 
+## 2026-09-25 — Migración al prompt v2 + mockup real
+
+El usuario trajo una versión actualizada del prompt (`prompt_claude_terminal_facylitech (1).md`)
+con un modelo de datos mucho más grande (jerarquía Cliente→Administración→
+Edificio→Ascensor, `emergencia`, `pieza_reemplazada`, matriz de frecuencia
+`meses[]` en `pauta_item`, RNF-01/02/04/05/06) y la instrucción de reutilizar
+un mockup ya validado con el cliente. Se recuperó el código fuente real del
+mockup (export de Figma Make en el Desktop del usuario, reconstruido con
+`git index-pack`) y se migró todo lo ya construido:
+
+- **Backend**: modelo reescrito por completo (12 entidades), migración
+  `0001` regenerada, nuevos routers (`clientes`, `administraciones`,
+  `emergencias`, bitácora de ascensor), regla de dominio
+  `items_del_mes()` (RNF-04), `seed.py` reescrito con los datos exactos del
+  mockup (edificios, ascensores, técnicos, emergencias — no inventados).
+  22 tests en verde, `ruff check .` limpio.
+- **Frontend**: identidad visual reemplazada por los tokens exactos del
+  mockup (navy `#0D1B2A`, naranjo `#EA580C`, tipografía Barlow), login/
+  selector reconstruido como flujo de 2 pasos igual al mockup, `OrdenDetalle`
+  ampliado con mañas de ascensor+edificio, línea "X de Y ítems este mes" y
+  piezas reemplazadas, dashboard con tarjetas de estadísticas y banner de
+  emergencia con datos reales. `lucide-react` y `recharts` agregados
+  (mismas libs que usa el mockup). Build + Vitest en verde.
+- **Verificado en navegador real** de punta a punta: login operador
+  (Alex Moreau) → dashboard con calendario/banner/emergencias reales; login
+  técnico (Marcus Delgado) → agenda → detalle con mañas y filtro de
+  checklist por mes → marcar ítem → agregar pieza reemplazada.
+- Decisiones documentadas en `docs/decisiones.md` (sección "v2"): mockup
+  recuperado, 5 supuestos provisionales, semáforo por orden vs. por día,
+  barra inferior móvil vs. sidebar compartido del mockup, rename
+  LiftOps→Facylitech.
+
+**Pendiente:** ninguno para el alcance de esta semana. El seed se re-corrió
+después de las pruebas manuales para dejar datos de demo limpios.
+
 ---
 
 ## Resumen de avance de la Gantt (al 25-09-2026)

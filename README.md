@@ -100,7 +100,7 @@ docker exec facylitech-db createdb -U facylitech facylitech_test
 facylitech/
 ├── backend/        # FastAPI, Clean Architecture (domain/application/infrastructure/api)
 ├── frontend/        # React + Vite (rutas /operador y /tecnico)
-├── docs/            # modelo-er.md, decisiones.md, avance.md
+├── docs/            # modelo-er.md, decisiones.md, avance.md, mockup/
 ├── docker-compose.yml
 └── .env.example
 ```
@@ -113,3 +113,5 @@ facylitech/
 - [`docs/decisiones.md`](./docs/decisiones.md) — decisiones de diseño ante
   ambigüedades del alcance.
 - [`docs/avance.md`](./docs/avance.md) — bitácora de avance por tarea.
+- [`docs/mockup/`](./docs/mockup/) — mockup validado con el cliente (HTML
+  compilado + código fuente de referencia): fuente de verdad de la UI.

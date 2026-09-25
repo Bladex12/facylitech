@@ -9,17 +9,36 @@ de ascensores (Santiago, Chile) para la empresa Facylitech. Proyecto
 académico (Desafío Empresa II, UDD). Dos perfiles únicamente: **Operador**
 (web/escritorio) y **Técnico** (PWA/celular). Sin perfil de cliente, sin
 asignación 100% automática de emergencias (el operador siempre aprueba),
-sin firma electrónica.
+sin firma electrónica con validez legal.
 
-Todo el código, commits y UI van **en español**. Dominio en español:
-`edificio`, `ascensor`, `orden_trabajo`, `papeleta`.
+**Requerimientos no funcionales (RNF)** a respetar en todo cambio:
+RNF-01 llenar una orden no puede tomar más pasos que el papel · RNF-02 la
+vista del técnico debe ser fluida en celular incluso con mala conexión ·
+RNF-04 el checklist se maneja con datos (`pauta_item.meses`), no con código
+· RNF-05 el técnico nunca ve información financiera · RNF-06 ~20 usuarios
+proyectados (no diseñar para escala mayor).
+
+**La identidad visual y de UI es la del mockup validado con el cliente**
+(`docs/mockup/` — HTML compilado + código fuente recuperado en
+`docs/mockup/source/`, ver `docs/decisiones.md` sobre cómo se recuperó).
+Reutilizar sus clases Tailwind y estructura de componentes al tocar UI, no
+rediseñar. Tokens de color: navy `#0D1B2A`, naranjo `#EA580C` (hover
+`#C2410C`), fondos `#F4F4F2`/`#F8F8F6`, bordes `#E0E0DE`, texto
+`#111827`/`#6B7280`, tipografía Barlow — definidos como variables CSS en
+`frontend/src/index.css` (`var(--color-navy)`, `var(--color-accent)`, etc.).
+
+Todo el código, commits y UI van **en español** (nombres propios del seed —
+edificios, técnicos — se mantienen tal como están en el mockup). Dominio en
+español: `edificio`, `ascensor`, `orden_trabajo`, `papeleta`.
 
 ## Stack
 
 - Backend: FastAPI (Python 3.12) async, SQLAlchemy 2.0 async + asyncpg,
   Alembic, GeoAlchemy2, Pydantic v2 + pydantic-settings.
 - Base de datos: PostgreSQL 16 + PostGIS (`postgis/postgis:16-3.4` vía Docker).
-- Frontend: React + TypeScript + Vite + Tailwind CSS + React Router + TanStack Query.
+- Frontend: React + TypeScript + Vite + Tailwind CSS v4 + React Router +
+  TanStack Query + `lucide-react` (íconos) + `recharts` (gráficos) — las dos
+  últimas porque el mockup las usa, no agregar otras sin justificarlas.
 - Técnico móvil: PWA (`vite-plugin-pwa`), foreground-first (sin offline completo aún).
 - Tests: pytest + pytest-asyncio + httpx (backend), Vitest (frontend).
 - Repo: monorepo único (`backend/`, `frontend/`, `docs/`).
@@ -117,6 +136,20 @@ Puntos clave de esta arquitectura:
   (usa `shapely` internamente) — no calcular geometría a mano.
 - **Códigos de OT**: generados en `SqlOrdenTrabajoRepository.siguiente_codigo()`
   como `WO-{2850 + conteo}`; ver limitaciones en `docs/decisiones.md`.
+- **Filtro de checklist por mes (RNF-04)**: `domain/pauta.py::items_del_mes()`
+  filtra los `PautaItem` cuyo `meses: int[]` incluye el mes en curso; se usa
+  al crear la papeleta (`use_cases/papeletas.py::crear_papeleta_desde_orden`).
+  `PapeletaOut.total_items_pauta` permite mostrar "X de Y ítems" en el front.
+- **Jerarquía de 4 niveles**: `Cliente → Administracion → Edificio →
+  Ascensor`. Navegación drill-down: `GET /clientes/{id}/administraciones`,
+  `GET /administraciones/{id}/edificios`, `GET /ascensores?edificio_id=`,
+  `GET /ascensores/{id}/bitacora` (query, no tabla — órdenes completadas +
+  papeleta + piezas de ese ascensor).
+- **`populate_existing=True`** en las queries de `SqlOrdenTrabajoRepository`
+  y `SqlPapeletaRepository`: la sesión usa `expire_on_commit=False`
+  (`infrastructure/db/session.py`), así que sin esto una fila ya cacheada en
+  el identity map no refresca sus colecciones (`items`, `piezas`) tras un
+  INSERT relacionado dentro de la misma sesión/request.
 
 ## Frontend — estructura de rutas
 
@@ -141,6 +174,9 @@ frontend/src/
 - El semáforo del backend (`completado|vencido|en_curso|programado`) mapea a
   colores en `domain/semaforo.ts` (verde/rojo/amarillo/azul) — es la única
   fuente de verdad de esos colores en el frontend.
+- Colores/tipografía de marca: variables CSS en `index.css`
+  (`--color-navy`, `--color-accent`, etc.) + clase `.font-mono-brand` (DM
+  Mono, para códigos como `WO-2850`). No usar hex sueltos en componentes.
 - TanStack Query para todo el data-fetching; no hay estado global propio más
   allá de `AuthContext`.
 
