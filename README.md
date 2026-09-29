@@ -15,7 +15,6 @@ Dos perfiles: **Operador** (web, escritorio) y **Técnico** (PWA, celular).
 - Técnico móvil: PWA (`vite-plugin-pwa`)
 - Tests: pytest + pytest-asyncio + httpx (backend), Vitest (frontend)
 
-Ver `CLAUDE.md` para arquitectura y convenciones detalladas.
 
 ## Requisitos
 
@@ -60,9 +59,6 @@ npm run dev
 Abrir `http://localhost:5173/operador` (selector de usuario operador del
 seed) y `http://localhost:5173/tecnico` (selector de técnico).
 
-> Nota de este entorno de desarrollo: el puerto 8000 estaba ocupado por otro
-> proyecto en esta máquina, por lo que el backend se corrió en 8001. Ver
-> `docs/decisiones.md`.
 
 ## Comandos
 
@@ -106,12 +102,9 @@ facylitech/
 ```
 
 ## Documentación
-
-- [`CLAUDE.md`](./CLAUDE.md) — arquitectura, comandos y convenciones para
-  desarrollo asistido por IA (también útil como referencia general).
 - [`docs/modelo-er.md`](./docs/modelo-er.md) — diagrama ER (Mermaid).
 - [`docs/decisiones.md`](./docs/decisiones.md) — decisiones de diseño ante
   ambigüedades del alcance.
 - [`docs/avance.md`](./docs/avance.md) — bitácora de avance por tarea.
 - [`docs/mockup/`](./docs/mockup/) — mockup validado con el cliente (HTML
-  compilado + código fuente de referencia): fuente de verdad de la UI.
+  compilado + código fuente de referencia).
