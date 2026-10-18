@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Marker } from 'react-leaflet'
-import { CalendarClock, ChevronRight, Mail, MapPin, Phone, X } from 'lucide-react'
+import { CalendarClock, ChevronRight, KeyRound, Mail, MapPin, Phone, X } from 'lucide-react'
 import { endpoints } from '../../../api/endpoints'
 import type { OrdenTrabajo, PrioridadOrdenTrabajo, TipoOrdenTrabajo, Usuario } from '../../../api/types'
 import { MapaBase } from '../../../components/mapa/MapaBase'
@@ -25,6 +26,7 @@ import {
   tiempoTranscurrido,
 } from '../../../domain/tiempoRelativo'
 import { CargaSemanal } from './CargaSemanal'
+import { RestablecerPassword } from './RestablecerPassword'
 
 /** Del mockup (JOB_TYPE_LABELS / PRIORITY_CFG). */
 const TIPO_LABEL: Record<TipoOrdenTrabajo, string> = {
@@ -56,6 +58,7 @@ export function DetalleTecnico({
   ahora: Date
   onCerrar: () => void
 }) {
+  const [restableciendo, setRestableciendo] = useState(false)
   const disp = DISPONIBILIDAD[claveDisponibilidad(t.estado_disponibilidad)]
   const desde = rangoSemana(ahora).desde
   const hasta = sumarDiasIso(ahora, DIAS_PROXIMOS)
@@ -223,6 +226,21 @@ export function DetalleTecnico({
           Ver agenda completa <ChevronRight size={12} />
         </Link>
       </div>
+
+      {/* Cuenta */}
+      <div className="border-t border-[var(--color-bg-subtle)] pt-4">
+        <div className="mb-2 font-mono text-[10px] tracking-widest text-[var(--color-text-muted)] uppercase">
+          Cuenta
+        </div>
+        <button
+          type="button"
+          onClick={() => setRestableciendo(true)}
+          className="flex w-full items-center justify-center gap-1.5 rounded border border-[var(--color-border)] bg-white px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-[var(--color-bg-subtle)]"
+        >
+          <KeyRound size={13} aria-hidden="true" /> Restablecer contraseña
+        </button>
+      </div>
+      {restableciendo && <RestablecerPassword tecnico={t} onCerrar={() => setRestableciendo(false)} />}
     </aside>
   )
 }

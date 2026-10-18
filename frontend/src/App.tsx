@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { useAuth } from './auth/AuthContext'
-import { SelectorUsuario } from './auth/SelectorUsuario'
+import { Login } from './auth/Login'
+import { RedirigirInicio, RequireRol } from './auth/RequireRol'
 import { OperadorLayout } from './routes/operador/Layout'
 import { Dashboard } from './routes/operador/Dashboard'
 import { Emergencias } from './routes/operador/Emergencias'
@@ -20,23 +20,18 @@ import { Escanear } from './routes/tecnico/Escanear'
 import { Mensajeria } from './components/mensajes/Mensajeria'
 
 function RequireOperador({ children }: { children: ReactNode }) {
-  const { usuario } = useAuth()
-  if (!usuario) return <SelectorUsuario rolEsperado="operador" />
-  if (usuario.rol !== 'operador') return <Navigate to="/tecnico" replace />
-  return <>{children}</>
+  return <RequireRol rol="operador">{children}</RequireRol>
 }
 
 function RequireTecnico({ children }: { children: ReactNode }) {
-  const { usuario } = useAuth()
-  if (!usuario) return <SelectorUsuario rolEsperado="tecnico" />
-  if (usuario.rol !== 'tecnico') return <Navigate to="/operador" replace />
-  return <>{children}</>
+  return <RequireRol rol="tecnico">{children}</RequireRol>
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/operador" replace />} />
+      <Route path="/" element={<RedirigirInicio />} />
+      <Route path="/login" element={<Login />} />
 
       <Route
         path="/operador"
@@ -77,6 +72,7 @@ export default function App() {
           element={<Mensajeria modo="movil" rutaOrden={(id) => `/tecnico/ordenes/${id}`} />}
         />
       </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

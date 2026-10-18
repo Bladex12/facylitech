@@ -1,6 +1,20 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { Building2, ClipboardList, LogOut, MapPin, MessageSquare, ScanLine, Wrench, WifiOff, Zap } from 'lucide-react'
+import {
+  Building2,
+  ChevronDown,
+  ClipboardList,
+  KeyRound,
+  LogOut,
+  MapPin,
+  MessageSquare,
+  ScanLine,
+  Wrench,
+  WifiOff,
+  Zap,
+} from 'lucide-react'
 import { useAuth } from '../../auth/AuthContext'
+import { CambiarPassword } from '../../auth/CambiarPassword'
 import { useNoLeidos } from '../../components/mensajes/useMensajes'
 import { useEnLinea } from '../../lib/red'
 import { useAsignacionesPendientes } from './hooks'
@@ -18,8 +32,98 @@ function Badge({ n, tono }: { n: number; tono: 'rojo' | 'naranjo' }) {
   )
 }
 
+/** Identidad del técnico en la cabecera; al tocarla se abre el menú de cuenta (sin pasos extra en el trabajo). */
+function MenuUsuario({
+  iniciales,
+  nombre,
+  detalle,
+  email,
+  onCambiarPassword,
+  onCerrarSesion,
+}: {
+  iniciales: string
+  nombre: string
+  detalle: string
+  email: string
+  onCambiarPassword: () => void
+  onCerrarSesion: () => void
+}) {
+  const [abierto, setAbierto] = useState(false)
+  const raiz = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!abierto) return
+    const fuera = (e: PointerEvent) => {
+      if (!raiz.current?.contains(e.target as Node)) setAbierto(false)
+    }
+    const tecla = (e: KeyboardEvent) => e.key === 'Escape' && setAbierto(false)
+    document.addEventListener('pointerdown', fuera)
+    document.addEventListener('keydown', tecla)
+    return () => {
+      document.removeEventListener('pointerdown', fuera)
+      document.removeEventListener('keydown', tecla)
+    }
+  }, [abierto])
+
+  return (
+    <div ref={raiz} className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={abierto}
+        aria-label="Menú de cuenta"
+        className="-ml-1 flex w-full min-w-0 items-center gap-3 rounded p-1 text-left active:bg-white/10"
+      >
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-[var(--color-accent)]/20 font-mono-brand text-xs font-bold text-[var(--color-accent)]">
+          {iniciales || <Building2 size={14} />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm leading-tight font-semibold">{nombre}</span>
+          <span className="block truncate font-mono-brand text-[10px] text-slate-400">{detalle}</span>
+        </span>
+        <ChevronDown size={14} className="flex-shrink-0 text-slate-400" aria-hidden="true" />
+      </button>
+      {abierto && (
+        <div
+          role="menu"
+          className="absolute top-full left-0 z-30 mt-2 w-64 overflow-hidden rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text)] shadow-xl"
+        >
+          <div className="border-b border-[var(--color-border)] px-4 py-3">
+            <p className="truncate text-sm font-semibold">{nombre}</p>
+            <p className="truncate text-xs text-[var(--color-text-muted)]">{email}</p>
+          </div>
+          <button
+            role="menuitem"
+            type="button"
+            onClick={() => {
+              setAbierto(false)
+              onCambiarPassword()
+            }}
+            className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm active:bg-[var(--color-bg-subtle)]"
+          >
+            <KeyRound size={16} className="text-[var(--color-text-muted)]" aria-hidden="true" /> Cambiar contraseña
+          </button>
+          <button
+            role="menuitem"
+            type="button"
+            onClick={() => {
+              setAbierto(false)
+              onCerrarSesion()
+            }}
+            className="flex w-full items-center gap-2.5 border-t border-[var(--color-border)] px-4 py-3 text-left text-sm text-red-700 active:bg-red-50"
+          >
+            <LogOut size={16} aria-hidden="true" /> Cerrar sesión
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function TecnicoLayout() {
-  const { usuario, setUsuario } = useAuth()
+  const { usuario, logout } = useAuth()
+  const [cambiandoPassword, setCambiandoPassword] = useState(false)
   const enLinea = useEnLinea()
   const { data: pendientes } = useAsignacionesPendientes()
   const noLeidos = useNoLeidos(usuario?.id)
@@ -42,15 +146,14 @@ export function TecnicoLayout() {
   return (
     <div className="mx-auto flex h-dvh max-w-md flex-col bg-[var(--color-bg)] shadow-xl">
       <header className="flex flex-shrink-0 items-center gap-3 bg-[var(--color-navy)] px-4 py-2.5 text-white">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-[var(--color-accent)]/20 font-mono-brand text-xs font-bold text-[var(--color-accent)]">
-          {iniciales || <Building2 size={14} />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm leading-tight font-semibold">{usuario?.nombre}</p>
-          <p className="truncate font-mono-brand text-[10px] text-slate-400">
-            {usuario?.zona ?? 'Técnico'}
-          </p>
-        </div>
+        <MenuUsuario
+          iniciales={iniciales}
+          nombre={usuario?.nombre ?? ''}
+          detalle={usuario?.zona ?? 'Técnico'}
+          email={usuario?.email ?? ''}
+          onCambiarPassword={() => setCambiandoPassword(true)}
+          onCerrarSesion={logout}
+        />
         <Link
           to="/tecnico/escanear"
           aria-label="Escanear QR del equipo"
@@ -58,13 +161,6 @@ export function TecnicoLayout() {
         >
           <ScanLine size={15} /> Escanear
         </Link>
-        <button
-          onClick={() => setUsuario(null)}
-          aria-label="Cerrar sesión"
-          className="-mr-1 rounded p-2 text-slate-400 active:bg-white/10"
-        >
-          <LogOut size={16} />
-        </button>
       </header>
 
       {!enLinea && (
@@ -104,6 +200,7 @@ export function TecnicoLayout() {
           </NavLink>
         ))}
       </nav>
+      {cambiandoPassword && <CambiarPassword onCerrar={() => setCambiandoPassword(false)} />}
     </div>
   )
 }

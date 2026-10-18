@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, Wifi, Zap } from 'lucide-react'
+import { Building2, KeyRound, Wifi, Zap } from 'lucide-react'
 import { useAuth } from '../../auth/AuthContext'
+import { CambiarPassword } from '../../auth/CambiarPassword'
 import { endpoints } from '../../api/endpoints'
 import { useNoLeidos } from '../../components/mensajes/useMensajes'
 
@@ -64,7 +66,8 @@ function Seccion({
 }
 
 export function OperadorLayout() {
-  const { usuario, setUsuario } = useAuth()
+  const { usuario, logout } = useAuth()
+  const [cambiandoPassword, setCambiandoPassword] = useState(false)
   const { data: calendario } = useQuery({
     queryKey: ['dashboard', 'calendario', MES_ACTUAL],
     queryFn: () => endpoints.dashboard.calendario(MES_ACTUAL),
@@ -106,7 +109,13 @@ export function OperadorLayout() {
             </div>
           </div>
           <button
-            onClick={() => setUsuario(null)}
+            onClick={() => setCambiandoPassword(true)}
+            className="flex w-full items-center gap-1.5 rounded px-2.5 py-1.5 text-left text-xs text-slate-500 transition-all hover:bg-white/5 hover:text-slate-300"
+          >
+            <KeyRound size={12} aria-hidden="true" /> Cambiar contraseña
+          </button>
+          <button
+            onClick={logout}
             className="w-full rounded px-2.5 py-1.5 text-left text-xs text-slate-500 transition-all hover:bg-white/5 hover:text-slate-300"
           >
             Cerrar sesión
@@ -133,6 +142,7 @@ export function OperadorLayout() {
           <Outlet />
         </main>
       </div>
+      {cambiandoPassword && <CambiarPassword onCerrar={() => setCambiandoPassword(false)} />}
     </div>
   )
 }
