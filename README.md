@@ -56,8 +56,20 @@ npm install
 npm run dev
 ```
 
-Abrir `http://localhost:5173/operador` (selector de usuario operador del
-seed) y `http://localhost:5173/tecnico` (selector de técnico).
+Abrir `http://localhost:5173` e iniciar sesión con correo y contraseña. Tras el
+seed existen estas cuentas de demostración (todas con la contraseña
+`facylitech2026`, configurable con `SEED_PASSWORD`):
+
+| Perfil | Correo | Entra a |
+|---|---|---|
+| Operador | `operador@facylitech.cl` | `/operador` |
+| Técnico | `melvin.zuniga@facylitech.cl`, `jorge.candia@facylitech.cl`, `juan.cubillos@facylitech.cl` | `/tecnico` |
+
+El backend necesita `JWT_SECRET` (en desarrollo tiene un valor por defecto
+inseguro; en cualquier otro entorno debe tener ≥ 32 caracteres o no arranca).
+Para mostrar botones que rellenan las cuentas de demostración en la pantalla de
+login, define `VITE_MOSTRAR_CUENTAS_DEMO=true` en `frontend/.env` (déjalo vacío
+en producción). Detalle en [`docs/contrato-auth.md`](./docs/contrato-auth.md).
 
 
 ## Comandos

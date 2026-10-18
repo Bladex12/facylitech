@@ -17,6 +17,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # El front lee Retry-After del 429 de login para mostrar cuánto falta de bloqueo.
+    expose_headers=["Retry-After"],
 )
 
 app.include_router(api_router)

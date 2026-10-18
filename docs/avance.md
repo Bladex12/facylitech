@@ -348,3 +348,23 @@ reinicios ni varios workers); sin refresh ni revocación de tokens (cambiar la
 contraseña no invalida los emitidos); `/media` sigue público; ver
 `docs/decisiones.md`. El frontend (login, sesión, caché del service worker)
 lo implementa el otro agente contra este mismo contrato.
+
+---
+
+## 2026-10-18 — Autenticación real (integración y verificación)
+
+Login con correo + contraseña, JWT (operador 12 h, técnico 24 h), hash scrypt,
+bloqueo tras 5 intentos fallidos, autorización por rol y por propiedad en todo
+el backend, cambio de contraseña propio y restablecimiento por el operador.
+Verificado en navegador real contra el backend real: sin sesión redirige a
+`/login` y vuelve a la ruta pedida; contraseña mala; token manipulado; refrescar
+conserva la sesión; cerrar sesión limpia `localStorage` y cachés del PWA; un
+técnico en `/operador` es redirigido; técnico recibe 403 en emergencias, mapa,
+usuarios y en OT/mensajes ajenos; 429 al 6.º intento; despacho en cascada con
+tokens reales. Backend: 329 tests, ruff limpio. Frontend: 127 tests.
+
+**Pendiente / límites conocidos:** contador de intentos en memoria (un solo
+proceso); sin refresh ni revocación de tokens (cambiar la contraseña no cierra
+sesiones abiertas); `/media` público (rutas con UUID); `/login` queda fuera del
+scope PWA `/tecnico/` (puede verse una barra superior solo en el login de la app
+instalada). Falta `JWT_SECRET` real para cualquier despliegue.
