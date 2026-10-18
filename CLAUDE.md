@@ -43,10 +43,16 @@ español: `edificio`, `ascensor`, `orden_trabajo`, `papeleta`.
 - Tests: pytest + pytest-asyncio + httpx (backend), Vitest (frontend).
 - Repo: monorepo único (`backend/`, `frontend/`, `docs/`).
 
+**Ya en alcance (octubre 2026, Hito 2 + Fase 3)**: almacenamiento de fotos
+de evidencia (local en dev, Supabase Storage configurable), mapa Leaflet +
+OSM, lector QR, cercanía PostGIS/Haversine y despacho en cascada aprobado por
+el operador, mensajería simple REST + polling. Contrato en
+`docs/contrato-api-octubre.md`.
+
 **Deliberadamente fuera de alcance por ahora** (no agregar sin que el usuario
-lo pida): Supabase Storage, mapa Leaflet, lector QR, algoritmo Haversine /
-asignación en cascada, tracking GPS, mensajería, WebSockets, CQRS, BD
-intercambiable, microservicios, event sourcing, autenticación real (JWT).
+lo pida): tracking GPS continuo (la Gantt lo pone el 26-oct, por eventos de
+botones), WebSockets, CQRS, BD intercambiable, microservicios, event
+sourcing, autenticación real (JWT).
 
 ## Comandos
 

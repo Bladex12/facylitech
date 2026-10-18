@@ -11,7 +11,10 @@ export class ApiError extends Error {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers:
+      options.body instanceof FormData
+        ? options.headers
+        : { 'Content-Type': 'application/json', ...options.headers },
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detalle: res.statusText }))
@@ -27,6 +30,14 @@ export const api = {
     request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  upload: <T>(path: string, form: FormData) => request<T>(path, { method: 'POST', body: form }),
+}
+
+/** URL absoluta para archivos servidos por el backend (evidencias con storage local). */
+export function urlArchivo(url: string): string {
+  if (/^https?:\/\//.test(url)) return url
+  return BASE_URL.replace(/\/api\/v1\/?$/, '') + url
 }
 
 function toQueryString(params: Record<string, string | number | undefined>): string {

@@ -1,6 +1,20 @@
 export type RolUsuario = 'operador' | 'tecnico'
-export type TipoCliente = 'comunidad' | 'fondo_inversion' | 'otro'
-export type TipoEdificio = 'residencial' | 'hospital' | 'oficina' | 'hotel' | 'industrial'
+export type TipoCliente =
+  | 'comunidad'
+  | 'fondo_inversion'
+  | 'administracion'
+  | 'corporativo'
+  | 'publico'
+  | 'otro'
+export type TipoEdificio =
+  | 'residencial'
+  | 'hospital'
+  | 'oficina'
+  | 'hotel'
+  | 'industrial'
+  | 'publico'
+/** Clase de equipo (dato de la empresa): ascensor, montacarga o montaplatos. */
+export type CategoriaEquipo = 'ascensor' | 'montacarga' | 'montaplatos'
 export type TipoEquipo = 'electromecanico' | 'hidraulico' | 'electrohidraulico'
 export type EstadoAscensor = 'operacional' | 'advertencia' | 'critico' | 'sin_senal'
 export type Especialidad =
@@ -61,6 +75,9 @@ export interface Edificio {
   manas: string | null
   instrucciones_reinicio: string | null
   vencimiento_certificacion: string | null
+  contacto_nombre: string | null
+  contacto_telefono: string | null
+  contacto_email: string | null
 }
 
 export interface EdificioResumen {
@@ -82,6 +99,7 @@ export interface Ascensor {
   anio_instalacion: number | null
   pisos: number | null
   tipo_equipo: TipoEquipo
+  categoria: CategoriaEquipo
   estado: EstadoAscensor
   tasa_fallo: number | null
   manas: string | null
@@ -116,6 +134,9 @@ export interface Usuario {
   zona: string | null
   especialidades: Especialidad[] | null
   estado_disponibilidad: EstadoDisponibilidadTecnico | null
+  rut: string | null
+  ultima_ubicacion: Coordenadas | null
+  ultima_ubicacion_at: string | null
 }
 
 export interface PautaItem {
@@ -203,6 +224,7 @@ export interface Papeleta {
   receptor_nombre: string | null
   items: ChecklistItem[]
   piezas: Pieza[]
+  evidencias: Evidencia[]
   total_items_pauta: number | null
 }
 
@@ -249,4 +271,141 @@ export interface Emergencia {
   descripcion: string | null
   solicitante: string | null
   estado: EstadoEmergencia
+  /** Coordenadas del edificio (para el mapa y el cálculo de cercanía). */
+  ubicacion: Coordenadas
+  /** Cascada de despacho aprobada por el operador, en orden. Vacía si aún no se despacha. */
+  asignaciones: AsignacionEmergencia[]
+  /** true si todos los técnicos de la cascada rechazaron/expiraron: el operador debe re-despachar. */
+  cascada_agotada: boolean
+  /** OT de emergencia creada al aceptar un técnico (null hasta entonces). */
+  orden_trabajo_id: string | null
+}
+
+// ---------------------------------------------------------------------------
+// Contrato octubre 2026 (Hito 2 + Fase 3). Ver docs/contrato-api-octubre.md
+// ---------------------------------------------------------------------------
+
+export interface Evidencia {
+  id: string
+  url: string
+  tipo: string | null
+  created_at: string
+}
+
+/** pendiente = notificado, esperando respuesta; en_espera = más abajo en la cascada. */
+export type EstadoAsignacion =
+  | 'en_espera'
+  | 'pendiente'
+  | 'aceptada'
+  | 'rechazada'
+  | 'expirada'
+  | 'cancelada'
+
+export interface AsignacionEmergencia {
+  id: string
+  emergencia_id: string
+  tecnico: TecnicoResumen
+  orden: number
+  estado: EstadoAsignacion
+  distancia_m: number | null
+  notificada_at: string | null
+  respondida_at: string | null
+  /** Momento en que expira si sigue pendiente (notificada_at + tiempo de respuesta). */
+  expira_at: string | null
+  motivo_rechazo: string | null
+}
+
+/** Asignación vista por el técnico, con la emergencia embebida. */
+export interface AsignacionTecnico extends AsignacionEmergencia {
+  emergencia: Emergencia
+}
+
+export interface CandidatoTecnico {
+  tecnico: Usuario
+  distancia_m: number | null
+  /** Estimado simple: distancia / 25 km/h (tráfico urbano Santiago). */
+  eta_min: number | null
+  especialidad_match: boolean
+  disponible: boolean
+  ordenes_en_curso: number
+}
+
+export interface MapaEdificio {
+  id: string
+  nombre: string
+  direccion: string
+  comuna: string
+  tipo: TipoEdificio
+  ubicacion: Coordenadas
+  total_equipos: number
+  equipos_con_falla: number
+  ordenes_hoy: number
+  emergencia_activa: boolean
+}
+
+export interface MapaTecnico {
+  id: string
+  nombre: string
+  estado_disponibilidad: EstadoDisponibilidadTecnico | null
+  ubicacion: Coordenadas | null
+  ubicacion_at: string | null
+  orden_actual: { id: string; codigo: string; edificio_nombre: string } | null
+}
+
+export interface MapaEmergencia {
+  id: string
+  codigo: string
+  tipo: Especialidad
+  edificio_id: string
+  edificio_nombre: string
+  ubicacion: Coordenadas
+  reportada_at: string
+  estado: EstadoEmergencia
+}
+
+export interface MapaData {
+  edificios: MapaEdificio[]
+  tecnicos: MapaTecnico[]
+  emergencias: MapaEmergencia[]
+}
+
+export interface Mensaje {
+  id: string
+  remitente: TecnicoResumen
+  destinatario: TecnicoResumen
+  orden_trabajo_id: string | null
+  texto: string
+  created_at: string
+  leido_at: string | null
+}
+
+export interface Conversacion {
+  contraparte: { id: string; nombre: string; rol: RolUsuario }
+  ultimo_mensaje: Mensaje | null
+  no_leidos: number
+}
+
+export interface OrdenTrabajoCrear {
+  tipo: TipoOrdenTrabajo
+  prioridad: PrioridadOrdenTrabajo
+  ascensor_id: string
+  tecnico_id?: string | null
+  pauta_id?: string | null
+  fecha_programada: string
+  descripcion?: string | null
+}
+
+export interface OrdenTrabajoActualizar {
+  tecnico_id?: string | null
+  fecha_programada?: string
+  prioridad?: PrioridadOrdenTrabajo
+  descripcion?: string | null
+}
+
+export interface EmergenciaCrear {
+  tipo: Especialidad
+  edificio_id: string
+  ascensor_id?: string | null
+  descripcion?: string | null
+  solicitante?: string | null
 }
