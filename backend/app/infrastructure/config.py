@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     jwt_secret: str = ""
     jwt_ttl_operador_horas: int = 12
     jwt_ttl_tecnico_horas: int = 24
+    # Solo para seed.py: contraseña de los usuarios de demostración.
+    seed_password: str = "facylitech2026"
 
     @model_validator(mode="after")
     def _validar_jwt_secret(self):

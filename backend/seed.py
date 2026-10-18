@@ -15,8 +15,9 @@ Uso:
     python seed.py
 
 Idempotente: vacía las tablas de negocio (TRUNCATE ... CASCADE) y las
-recrea. Los UUID son deterministas (uuid5), así que el usuario elegido en el
-selector de desarrollo del frontend sigue siendo válido después de re-sembrar.
+recrea. Los UUID son deterministas (uuid5), así que las sesiones (token) y
+los ids de usuario siguen siendo válidos después de re-sembrar. Todos los usuarios quedan
+con la contraseña SEED_PASSWORD (default "facylitech2026"), que se imprime al final.
 """
 
 import asyncio
@@ -43,6 +44,8 @@ from app.domain.enums import (
     TipoOrdenTrabajo,
 )
 from app.domain.pauta import items_del_mes
+from app.domain.seguridad import hash_password
+from app.infrastructure.config import settings
 from app.infrastructure.db.models import (
     Administracion,
     Ascensor,
@@ -599,6 +602,10 @@ async def seed() -> None:
                 especialidades=[x.value for x in t["especialidades"]],
             )
         operador = Usuario(id=_id("usuario", "OPERADOR"), rol=RolUsuario.OPERADOR, activo=True, **_OPERADOR)
+        # Todos los usuarios de demostración comparten SEED_PASSWORD (solo demo; cada uno
+        # con su propia sal). Sin esto no podrían iniciar sesión.
+        for usuario in (*tecnicos.values(), operador):
+            usuario.password_hash = hash_password(settings.seed_password)
         session.add_all([*tecnicos.values(), operador])
 
         # Última ubicación de hoy (SIMULADA) para la cercanía PostGIS.
@@ -825,7 +832,10 @@ async def seed() -> None:
             f"{len(emergencias)} emergencias, {len(ordenes)} órdenes ({completadas} completadas, "
             f"{vencidas} vencidas), {len(mensajes)} mensajes."
         )
-        print(f"Operador: {operador.email}")
+        print("Cuentas de demostración (todas con la misma contraseña, definida por SEED_PASSWORD):")
+        for usuario in (operador, *tecnicos.values()):
+            print(f"  {usuario.rol.value:<8} {usuario.email}")
+        print(f"Contraseña: {settings.seed_password}")
 
 
 if __name__ == "__main__":
