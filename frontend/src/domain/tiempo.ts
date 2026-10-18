@@ -38,7 +38,7 @@ export function formatoDistancia(metros: number | null | undefined): string {
 }
 
 export function formatoHora(fechaIso: string): string {
-  return new Date(fechaIso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+  return new Date(fechaIso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 }
 
 /** Etiqueta de un día relativo a hoy: "Hoy", "Mañana", "Ayer" o "lunes 20 de octubre". */

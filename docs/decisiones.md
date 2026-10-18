@@ -177,3 +177,62 @@ parece servir.
   `geography` del ORM a `{lat, lon}`, así cualquier endpoint que devuelva un
   `Usuario` (incluidos los de backend-geo) obtiene la forma del contrato sin
   serializar a mano.
+
+## 2026-10-18 — App del técnico y mensajería (frontend-tecnico)
+
+- **`jsqr` como respaldo del lector QR** (única dependencia nueva): se usa
+  `BarcodeDetector` nativo cuando existe (Chrome Android, Safari iOS 17+); en
+  navegadores sin él (Chrome de escritorio en Linux/Windows, Firefox, iOS
+  antiguo) se carga `jsqr` bajo demanda con `import()`, así que no pesa en el
+  bundle inicial. Se eligió por ser JS puro sin dependencias (~45 KB
+  minificado), sin WASM ni workers, y suficiente para QR impresos a corta
+  distancia. Alternativas descartadas: `html5-qrcode`/`@zxing/library`
+  (bastante más pesadas y traen su propia UI/cámara).
+- **Botón "Escanear" en el header, no en la barra inferior**: la barra ya
+  tiene 5 destinos; un sexto botón no cabe bien a 375 px. El header está
+  visible en todas las pantallas y no suma pasos a ningún flujo (RNF-01). En
+  el detalle de la OT, "Verificar QR" es un atajo opcional, nunca un
+  requisito para iniciar/completar.
+- **"Iniciar trabajo" crea la papeleta en el mismo toque** (RNF-01): antes
+  eran dos botones (Iniciar → Crear papeleta). Si la creación falla queda el
+  botón "Abrir papeleta" como respaldo.
+- **Checklist optimista** y guardado de textos al salir del campo con
+  indicador "Guardando… / Guardado / No se guardó" (RNF-02).
+- **Fotos**: compresión en el cliente (canvas → JPEG 0.8, lado mayor 1600 px;
+  si la compresión no reduce el archivo se sube el original) y subida
+  secuencial de a una (más estable con mala señal). El estado por foto es
+  Optimizando / Subiendo / Error + Reintentar; no hay % real de subida porque
+  `api.upload` usa `fetch` (sin eventos de progreso) y no se quiso duplicar
+  el cliente HTTP con XHR.
+- **Tracking por eventos**: al Iniciar/Completar se pide una lectura de GPS
+  (timeout 5 s) y se llama `POST /usuarios/{id}/ubicacion` en segundo plano;
+  si falla no bloquea ni avisa. El mapa del técnico usa `watchPosition` solo
+  mientras la vista está abierta y no envía esa posición al servidor.
+- **Coordenadas en el mapa del técnico**: `OrdenTrabajo` no trae la
+  ubicación del edificio, así que se pide `GET /edificios/{id}` por cada
+  edificio de las paradas (cacheado 10 min por TanStack Query; con ~10
+  edificios es despreciable, RNF-06). Varias OTs en el mismo edificio
+  comparten marcador. El encuadre lo hace la vista (no `MapaBase.ajustarA`)
+  para dejar libres los controles superiores y la tarjeta inferior.
+- **Tras aceptar una emergencia** se busca la OT por `emergencia_id` en
+  `GET /ordenes-trabajo?tecnico_id=&tipo=emergencia` y se navega a ella; si
+  aún no aparece (o no hay red) se muestra un aviso con link a la agenda y
+  "Cómo llegar".
+- **Permiso de cámara**: los navegadores no reportan igual el bloqueo
+  (`NotAllowedError`, a veces `NotSupportedError`), así que ante un error de
+  `getUserMedia` se confirma con la Permissions API antes de mostrar
+  "Permiso denegado".
+- **PWA**: `runtimeCaching` NetworkFirst (timeout 6 s) para los GET de
+  `/api/v1/` y CacheFirst para `/media/` (fotos). Con mala señal se ven los
+  últimos datos en vez de una pantalla rota; las escrituras nunca se cachean
+  ni se encolan (no hay offline completo), y el banner "Sin conexión" lo
+  dice explícitamente. `theme_color` pasa al navy de la marca.
+- **Mensajería**: un solo componente (`components/mensajes/Mensajeria.tsx`)
+  con modo `movil` (lista → hilo a pantalla completa) y `escritorio` (dos
+  columnas). El hilo abierto vive en `?con=<usuarioId>` (el botón atrás del
+  celular cierra el hilo) y `?orden=<otId>` precarga la referencia a una OT
+  (atajo "Consultar" del detalle de la OT). Envío optimista con reintento si
+  falla. Las OTs referenciables son las del técnico de la conversación.
+  Badge de no leídos en ambos layouts con la misma query (polling 20 s).
+- **Horas en formato 24 h** (`hourCycle: 'h23'`) en la app del técnico:
+  `es-CL` por defecto mostraba "04:40 p. m.", poco legible en tarjetas.

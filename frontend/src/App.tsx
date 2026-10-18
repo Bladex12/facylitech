@@ -8,6 +8,11 @@ import { Dashboard } from './routes/operador/Dashboard'
 import { TecnicoLayout } from './routes/tecnico/Layout'
 import { Agenda } from './routes/tecnico/Agenda'
 import { OrdenDetalle } from './routes/tecnico/OrdenDetalle'
+import { Trabajos } from './routes/tecnico/Trabajos'
+import { Mapa as MapaTecnico } from './routes/tecnico/Mapa'
+import { Emergencias as EmergenciasTecnico } from './routes/tecnico/Emergencias'
+import { Escanear } from './routes/tecnico/Escanear'
+import { Mensajeria } from './components/mensajes/Mensajeria'
 
 function RequireOperador({ children }: { children: ReactNode }) {
   const { usuario } = useAuth()
@@ -44,7 +49,7 @@ export default function App() {
         <Route path="ascensores" element={<Proximamente titulo="Ascensores" />} />
         <Route path="emergencias" element={<Proximamente titulo="Emergencias" />} />
         <Route path="tecnicos" element={<Proximamente titulo="Técnicos" />} />
-        <Route path="mensajes" element={<Proximamente titulo="Mensajes" />} />
+        <Route path="mensajes" element={<Mensajeria modo="escritorio" />} />
       </Route>
 
       <Route
@@ -58,10 +63,14 @@ export default function App() {
         <Route index element={<Navigate to="agenda" replace />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="ordenes/:id" element={<OrdenDetalle />} />
-        <Route path="trabajos" element={<Proximamente titulo="Trabajos" />} />
-        <Route path="mapa" element={<Proximamente titulo="Mapa" />} />
-        <Route path="emergencias" element={<Proximamente titulo="Emergencias" />} />
-        <Route path="mensajes" element={<Proximamente titulo="Mensajes" />} />
+        <Route path="trabajos" element={<Trabajos />} />
+        <Route path="mapa" element={<MapaTecnico />} />
+        <Route path="emergencias" element={<EmergenciasTecnico />} />
+        <Route path="escanear" element={<Escanear />} />
+        <Route
+          path="mensajes"
+          element={<Mensajeria modo="movil" rutaOrden={(id) => `/tecnico/ordenes/${id}`} />}
+        />
       </Route>
     </Routes>
   )

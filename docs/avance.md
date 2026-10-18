@@ -178,3 +178,24 @@ emergencias activas sin despachar). 44 tests pasando, ruff limpio.
 **Pendiente:** confirmar con la empresa la lista de
 `docs/datos-simulacion.md` §4 (discrepancias Excel/diagrama, coordenadas,
 operador, especialidades, pautas reales, SLA, correos `.py`).
+
+## 2026-10-18 — App del técnico completa + mensajería (frontend-tecnico)
+
+Vistas `/tecnico/trabajos` (pendientes/completadas, filtro por tipo,
+búsqueda, agrupadas por día), `/tecnico/mapa` (paradas del día numeradas,
+mi posición, Google Maps/Waze), `/tecnico/emergencias` (asignaciones con
+cuenta regresiva, aceptar/rechazar con motivo, historial; badge y banner en
+todas las pantallas, polling 10 s), `/tecnico/escanear` (cámara +
+BarcodeDetector/jsqr, entrada manual, verificación desde la OT, ficha del
+equipo con bitácora), fotos de evidencia y borrado de piezas en la papeleta,
+reporte de ubicación al Iniciar/Completar, y mensajería compartida
+(`/tecnico/mensajes` y `/operador/mensajes`) con badges de no leídos.
+Estados de carga/vacío/error/sin conexión en todas las vistas. Verificado
+con Playwright a 390×844 (y 1440×900 el chat del operador) contra el backend
+con la mensajería real; asignaciones, `porQr`, evidencias y ubicación
+mockeados con la forma del contrato. Lectura QR real probada con cámara
+falsa (video y4m con un QR). Tests Vitest pasando.
+
+**Pendiente:** probar contra los endpoints reales de backend-geo
+(asignaciones, `ascensores/qr`, evidencias, ubicación) al integrar; probar
+en un celular real (cámara, GPS, `capture="environment"`).
