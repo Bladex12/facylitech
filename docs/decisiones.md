@@ -134,3 +134,46 @@ y corregí `backend/seed.py`:
 Lección para revisiones futuras: cuando el usuario dice "está en el repo",
 mirar el repo primero, incluso si ya se encontró una fuente alternativa que
 parece servir.
+
+## 2026-10-18 — Datos de la empresa (contrato de octubre, sección 1)
+
+- **El seed usa la data de simulación de la empresa** (doc. UDD N.° 6-1005,
+  05-oct-26), no la del mockup. Detalle del mapeo, lo simulado y lo que hay
+  que pedirle a la empresa en `docs/datos-simulacion.md`. Esto reemplaza la
+  regla anterior de "nombres propios del seed tomados del mockup".
+- **Clientes sin administración externa** (Clínica Aether, Ecohabitat Hotel,
+  Municipalidad): `cliente` de tipo `corporativo`/`publico` + una
+  `administracion` homónima con sufijo "(gestión directa)". Se prefirió esto
+  a volver nullable `edificio.administracion_id` (rompería la navegación
+  drill-down de 4 niveles y el contrato). No se agregó columna booleana: el
+  sufijo basta para ~10 clientes (RNF-06).
+- **Discrepancias Excel vs. diagrama**: se usa el Excel para cantidades
+  (Clínica Aether 18 ascensores repartidos A=7/B=4/C=7; Municipalidad 4
+  ascensores + 2 montacargas). Queda en la lista de datos a confirmar.
+- **Montacargas/montaplatos** usan una pauta propia elegida por
+  `ascensor.categoria` (no por `tipo_equipo`), porque su checklist difiere del
+  de un ascensor aunque sean electromecánicos.
+- **Seed idempotente por `TRUNCATE ... CASCADE` + UUID deterministas
+  (uuid5)**: como cambió todo el catálogo, el get-or-create anterior dejaba
+  basura del mockup. TRUNCATE CASCADE también vacía tablas nuevas que
+  dependan de éstas (p. ej. `asignacion_emergencia` de la migración 0003), y
+  los UUID fijos mantienen válido el usuario guardado en `localStorage` por el
+  selector de desarrollo.
+- **Códigos de OT del seed**: `WO-2850…` en orden cronológico, consistente con
+  `siguiente_codigo()` (2850 + conteo).
+- **PATCH parciales** (`edificios`, `ascensores`, `ordenes-trabajo`): se
+  aplican solo los campos enviados (`exclude_unset`); `null` explícito limpia
+  un campo anulable y da 422 en uno NOT NULL (`nombre`, `direccion`,
+  `estado`, `fecha_programada`, `prioridad`). `PATCH /ordenes-trabajo` con
+  `tecnico_id` de un usuario que no es técnico → 422; inexistente → 404.
+- **Cancelar una OT `en_curso`** está permitido (el contrato solo prohíbe
+  `completado`/`cancelado`); no se toca la papeleta.
+- **Mensajería**: `created_at` se fija en la aplicación, no con `now()` de
+  Postgres (que devuelve la hora de inicio de la transacción y deja empates
+  en el hilo). Las conversaciones sin mensajes van al final, ordenadas por
+  nombre. No se valida que `orden_trabajo_id` exista (FK `SET NULL`); no hay
+  restricción de roles entre remitente y destinatario.
+- **`UsuarioOut.ultima_ubicacion`**: un `field_validator` convierte el
+  `geography` del ORM a `{lat, lon}`, así cualquier endpoint que devuelva un
+  `Usuario` (incluidos los de backend-geo) obtiene la forma del contrato sin
+  serializar a mano.

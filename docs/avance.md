@@ -161,3 +161,20 @@ compose up -d` → migraciones → `seed.py` → backend (`uvicorn`) → fronten
 - **Auth de desarrollo**: sigue siendo un selector sin contraseña; si el
   cliente pide login real antes de lo previsto, es un cambio contenido a
   `frontend/src/auth/` + un router de autenticación nuevo en el backend.
+
+## 2026-10-18 — Datos de la empresa + API sección 1 del contrato (backend-datos)
+
+Migración `0002` (`ascensor.categoria`, `usuario.rut`, contactos de
+comunidad en `edificio`, tabla `mensaje`; upgrade/downgrade verificados).
+Endpoints: campos nuevos en `UsuarioOut`/`EdificioOut`/`AscensorOut`, filtro
+`categoria` en `GET /ascensores`, `PATCH` de edificio/ascensor/orden,
+`POST /ordenes-trabajo/{id}/cancelar` y mensajería REST
+(`/mensajes/conversaciones`, `/mensajes/hilo`, `POST /mensajes`,
+`POST /mensajes/leer`). `seed.py` reescrito con la data de simulación de la
+empresa (10 comunidades, 68 equipos, 3 técnicos con RUT, cronograma 7–9 oct
+mayormente completado con 3 OTs vencidas + ciclo 4–6 nov programado, 2
+emergencias activas sin despachar). 44 tests pasando, ruff limpio.
+
+**Pendiente:** confirmar con la empresa la lista de
+`docs/datos-simulacion.md` §4 (discrepancias Excel/diagrama, coordenadas,
+operador, especialidades, pautas reales, SLA, correos `.py`).
