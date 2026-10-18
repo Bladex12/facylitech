@@ -5,6 +5,9 @@ import { SelectorUsuario } from './auth/SelectorUsuario'
 import { Proximamente } from './components/Proximamente'
 import { OperadorLayout } from './routes/operador/Layout'
 import { Dashboard } from './routes/operador/Dashboard'
+import { Ascensores } from './routes/operador/ascensores/Ascensores'
+import { Calendario } from './routes/operador/calendario/Calendario'
+import { AgendaOperador } from './routes/operador/agenda/AgendaOperador'
 import { TecnicoLayout } from './routes/tecnico/Layout'
 import { Agenda } from './routes/tecnico/Agenda'
 import { OrdenDetalle } from './routes/tecnico/OrdenDetalle'
@@ -39,9 +42,9 @@ export default function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="mapa" element={<Proximamente titulo="Mapa" />} />
-        <Route path="calendario" element={<Proximamente titulo="Calendario" />} />
-        <Route path="agenda" element={<Proximamente titulo="Agenda" />} />
-        <Route path="ascensores" element={<Proximamente titulo="Ascensores" />} />
+        <Route path="calendario" element={<Calendario />} />
+        <Route path="agenda" element={<AgendaOperador />} />
+        <Route path="ascensores/*" element={<Ascensores />} />
         <Route path="emergencias" element={<Proximamente titulo="Emergencias" />} />
         <Route path="tecnicos" element={<Proximamente titulo="Técnicos" />} />
         <Route path="mensajes" element={<Proximamente titulo="Mensajes" />} />
