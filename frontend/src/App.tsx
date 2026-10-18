@@ -8,6 +8,9 @@ import { Dashboard } from './routes/operador/Dashboard'
 import { Emergencias } from './routes/operador/Emergencias'
 import { Mapa } from './routes/operador/Mapa'
 import { Tecnicos } from './routes/operador/Tecnicos'
+import { Ascensores } from './routes/operador/ascensores/Ascensores'
+import { Calendario } from './routes/operador/calendario/Calendario'
+import { AgendaOperador } from './routes/operador/agenda/AgendaOperador'
 import { TecnicoLayout } from './routes/tecnico/Layout'
 import { Agenda } from './routes/tecnico/Agenda'
 import { OrdenDetalle } from './routes/tecnico/OrdenDetalle'
@@ -42,9 +45,9 @@ export default function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="mapa" element={<Mapa />} />
-        <Route path="calendario" element={<Proximamente titulo="Calendario" />} />
-        <Route path="agenda" element={<Proximamente titulo="Agenda" />} />
-        <Route path="ascensores" element={<Proximamente titulo="Ascensores" />} />
+        <Route path="calendario" element={<Calendario />} />
+        <Route path="agenda" element={<AgendaOperador />} />
+        <Route path="ascensores/*" element={<Ascensores />} />
         <Route path="emergencias" element={<Emergencias />} />
         <Route path="tecnicos" element={<Tecnicos />} />
         <Route path="mensajes" element={<Proximamente titulo="Mensajes" />} />

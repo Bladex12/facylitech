@@ -221,3 +221,20 @@ API).
 **Pendiente:** notificación activa al técnico (hoy la PWA debe hacer polling
 de `GET /asignaciones`); devolver al técnico a `disponible` al completar la
 OT de emergencia.
+
+## 2026-10-18 — Vistas del operador: Ascensores, Calendario y Agenda (frontend-operador-2)
+
+**Quedó:** `/operador/ascensores` (drill-down Cliente → Administración →
+Edificio → Equipo con migas, búsqueda global, filtros por categoría/estado,
+ficha de edificio con contactos, mañas, reinicio y certificación editables por
+PATCH, equipos agrupados por sector y categoría, ficha de equipo con datos
+técnicos/estado/mañas editables, bitácora con piezas, QR real imprimible y
+próximas OTs), `/operador/calendario` (mes y semana con semáforo, filtros por
+técnico/tipo/edificio, panel lateral para reasignar, reprogramar, cambiar
+prioridad y cancelar con manejo de 409) y `/operador/agenda` (cronograma
+técnico × día con bloques mañana/tarde/día completo por edificio y progreso).
+Modal "Nueva OT" reutilizable con pauta sugerida. Lógica pura en
+`domain/semana.ts`, `domain/agenda.ts`, `domain/equipos.ts` con tests Vitest.
+
+**Falta:** replicar cronograma al mes siguiente (botón del mockup), arrastrar
+OTs entre días/técnicos, y vista móvil del operador (es de escritorio).

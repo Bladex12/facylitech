@@ -248,3 +248,38 @@ contrato dejaba margen:
   traen datos de contacto, aunque sean simulados); viven en la carpeta local
   `Docs empresa/`. Su contenido quedó transcrito en `seed.py` y
   `docs/datos-simulacion.md`.
+
+## 2026-10-18 — Vistas del operador: ascensores, calendario y agenda (frontend-operador-2)
+
+- **Dependencia `qrcode`** (+ `@types/qrcode`): el `QRSvg` del mockup es
+  decorativo (dibuja un patrón a partir de los caracteres, no es escaneable).
+  El lector QR del técnico (`/tecnico/escanear` → `GET /ascensores/qr/{codigo}`)
+  necesita códigos reales, y la etiqueta se imprime y pega en la sala de
+  máquinas. `qrcode` es pequeña, sin dependencias de React, genera SVG para la
+  ficha y canvas para la etiqueta PNG (descargar/imprimir). El QR codifica
+  solo `codigo_qr` (p. ej. `FCY-AET-A01`), no una URL, para que no dependa del
+  dominio donde se despliegue.
+- **Catálogos completos en el cliente**: clientes, administraciones,
+  edificios, equipos, técnicos y pautas se cargan una vez (staleTime 5 min) y
+  se filtran/agrupan en el navegador. Con RNF-06 (~80 equipos, 10 edificios)
+  es más simple y rápido que una query por nivel del drill-down; el filtro
+  `categoria` del contrato existe en el backend pero la vista no lo necesita.
+- **Paginación**: todos los listados limitan a 100 (y por defecto a 20; un
+  edificio real tiene 22 equipos y un mes ~140 OTs), así que
+  `api/paginacion.ts::traerTodo()` recorre las páginas con `limit=100`.
+- **Medio día**: el corte mañana/tarde es a las 13:00 (`HORA_CORTE_TARDE`);
+  crear desde un slot propone 09:00 o 14:00. En la agenda, un edificio con
+  OTs del mismo técnico en mañana y tarde se muestra como **día completo**
+  (así planifica la empresa). Las OTs canceladas no se agendan; en el
+  calendario se ocultan salvo "Ver canceladas".
+- **Filtro "Sin asignar" del calendario**: el backend no filtra por
+  `tecnico_id IS NULL`, así que el filtro de técnico se aplica en el cliente
+  (tipo y edificio sí van al servidor).
+- **Pauta sugerida**: solo para mantención/inspección/primera visita; se
+  prefiere la pauta cuyo nombre menciona la categoría (montacargas/
+  montaplatos) y luego la del mismo `tipo_equipo`. El operador puede cambiarla.
+- **Certificación**: se avisa (ámbar) si vence en ≤ 60 días y en rojo si ya
+  venció (`DIAS_AVISO_CERTIFICACION`).
+- **Fecha sugerida para una OT nueva**: nunca en el pasado ni en domingo
+  (el mockup ya marcaba los domingos como conflicto). Una fecha pasada o en
+  domingo se permite, con advertencia.
