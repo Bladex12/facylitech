@@ -342,3 +342,62 @@ contrato dejaba margen:
   Badge de no leídos en ambos layouts con la misma query (polling 20 s).
 - **Horas en formato 24 h** (`hourCycle: 'h23'`) en la app del técnico:
   `es-CL` por defecto mostraba "04:40 p. m.", poco legible en tarjetas.
+
+## 2026-10-18 — Autenticación real en el frontend (frontend-auth)
+
+Implementa la sección "Frontend" de `docs/contrato-auth.md`.
+
+- **El cliente HTTP no conoce a React ni al router.** `api/client.ts` guarda el
+  token en una variable de módulo (`fijarToken`) y expone `onNoAutorizado(cb)`;
+  `AuthProvider` registra el callback. Ante un 401 (salvo `/auth/login` y
+  `/auth/cambiar-password`) la sesión se limpia y, como `usuario` pasa a
+  `null`, los guards de `App.tsx` redirigen a `/login` sin que el cliente
+  navegue. Un 401 tardío de una sesión anterior (token distinto al vigente) se
+  ignora para no cerrar la sesión nueva.
+- **Cierre voluntario vs. expiración.** `AuthContext` expone `motivoCierre`.
+  Tras un cierre voluntario los guards no guardan `state.from` (el siguiente
+  usuario en ese celular parte de cero); tras una expiración sí, y `/login`
+  muestra "Tu sesión expiró". Tras entrar se vuelve a `from` solo si es de la
+  sección del rol (`rutaPermitida`); si no, a `/operador` o `/tecnico`.
+- **Validación al cargar con tope de espera.** `GET /auth/me` se hace con la
+  sesión guardada y la app muestra una pantalla de carga (sin parpadeo de
+  `/login`); con señal mala (RNF-02) a los 4 s se entra con la sesión guardada
+  y la validación sigue en segundo plano. Si responde 401 se cierra la sesión.
+- **Cachés del service worker: vaciar, no variar por `Authorization`.**
+  Workbox indexa por URL, no por header; hacerlo variar por token exigiría un
+  plugin propio. Es más simple y robusto vaciar `api-get` y `evidencias`
+  (`caches.delete`, con feature-detection y try/catch) al cerrar sesión, ante
+  un 401 y antes de guardar una sesión nueva, junto con `queryClient.clear()`.
+  Además `/api/v1/auth/*` se excluye del `runtimeCaching` de `api-get`. Límite
+  conocido: `/media/*` es público y no depende del usuario, pero se vacía
+  igual.
+- **PWA y `/login`.** El `scope` del PWA sigue siendo `/tecnico/`; `/login`
+  queda fuera de ese alcance, así que en la app instalada el navegador puede
+  mostrar una barra superior mientras se inicia sesión y desaparece al entrar
+  a `/tecnico`. Se dejó así para no extender el service worker al operador.
+  Si molesta en la demo, ampliar el `scope` a `/`.
+- **Menú de cuenta del técnico en la cabecera.** El nombre/avatar ahora abre
+  un menú (Cambiar contraseña, Cerrar sesión) y se retiró el ícono suelto de
+  salir: no agrega pasos a los flujos de trabajo (RNF-01) y libera espacio a
+  390 px. En el operador, ambos botones quedan en la barra lateral.
+- **Diálogos de contraseña**: `HojaModal` es hoja inferior en celular y modal
+  centrado en escritorio (`role="dialog"`, `aria-modal`, foco atrapado,
+  Escape, devuelve el foco). Se escribió aparte del `Modal` del operador
+  porque ese es de ancho fijo y sin hoja móvil.
+- **Restablecer contraseña**: confirmación -> formulario (con "Generar una
+  contraseña", 10 caracteres sin caracteres ambiguos) -> pantalla final que
+  muestra la contraseña una sola vez con botón Copiar, porque no hay correo
+  para entregársela al técnico.
+- **Cuentas de demostración** solo con `VITE_MOSTRAR_CUENTAS_DEMO=true`; los
+  botones rellenan el formulario y no inician sesión solos. La clave del seed
+  está en el código del front únicamente para ese modo (documentado en
+  `frontend/.env.example`; no activar en producción).
+- **Panel de marca del login**: se reemplazaron las cifras fijas del selector
+  (12 ascensores, 6 edificios, 20 usuarios, ya desactualizadas) por tres
+  funciones del producto.
+- **Matriz de permisos vs. vistas del técnico**: revisadas; solo usa
+  `ordenes`, `papeletas`, `asignaciones`, `mensajes`, `edificios/{id}`,
+  `ascensores/qr` y `ascensores/{id}/bitacora`, `usuarios/{id}/ubicacion`
+  (propio). Ninguna llama a clientes, administraciones, `usuarios.listar`,
+  `emergencias`, `mapa` ni `tecnicos/cercanos`.
+

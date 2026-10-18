@@ -262,6 +262,31 @@ en un celular real (cámara, GPS, `capture="environment"`).
 
 ---
 
+## 2026-10-18 — Autenticación real en el frontend (frontend-auth)
+
+Reemplazado el selector de usuario por login con correo + contraseña contra
+`docs/contrato-auth.md`. **Qué quedó:** pantalla `/login` (mostrar/ocultar
+contraseña, estados de carga/error, bloqueo temporal 429 con cuenta regresiva,
+aviso de sesión expirada, responsive 390 px y escritorio, cuentas de
+demostración solo con `VITE_MOSTRAR_CUENTAS_DEMO=true`); sesión
+`{token, usuario, expira_at}` en `localStorage['facylitech.sesion']` validada
+con `GET /auth/me` al cargar (sin red se conserva; 401 o `expira_at` vencido la
+descartan); `Authorization: Bearer` en todo request; 401 -> vuelve a `/login`
+y 403/429 con mensaje claro; guards por rol con redirección a la ruta
+pedida; al cerrar sesión y al iniciar otra se vacían TanStack Query y las
+cachés `api-get`/`evidencias` del service worker; "Cambiar contraseña" en el
+menú de usuario de ambos layouts y "Restablecer contraseña" (con confirmación
+y generador) en el detalle de técnico del operador. Revisión de la matriz de
+permisos: ninguna vista del técnico llama a endpoints prohibidos (verificado
+en el navegador); no hubo que ajustar vistas. **Verificación:** 30
+comprobaciones con Playwright (móvil 390x844 y escritorio 1440x900, auth
+simulada con `page.route` y datos del backend sin auth de esta rama) + 51
+tests nuevos de Vitest. **Falta:** probar contra el backend real con auth
+(integración del orquestador); el backend debería exponer `Retry-After` por
+CORS (`expose_headers`) para que el contador del 429 funcione entre orígenes
+distintos (si no, el front muestra el mensaje del backend sin cuenta
+regresiva).
+
 ## 🏁 2026-10-18 — Integración y verificación de punta a punta
 
 Se integraron las 5 líneas de trabajo (backend datos de la empresa, backend
