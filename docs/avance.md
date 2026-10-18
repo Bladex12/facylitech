@@ -299,3 +299,27 @@ factibilidad de servidor); sin auth real todavía (selector de desarrollo).
 > Nota: en `Carta Gantt Facylitech II.xlsx` la tarea "Integración de API real
 > con Operador" tiene las fechas con año 2016 (19-10-16 a 1-11-16); es un
 > error de tipeo de la planilla (debería ser 2026).
+
+## 2026-10-18 — Autenticación real y autorización por rol [backend-auth]
+
+Login con correo + contraseña (`POST /auth/login`, `GET /auth/me`,
+`POST /auth/cambiar-password`, `PUT /usuarios/{id}/password`), JWT HS256 con
+PyJWT (12 h operador / 24 h técnico), contraseñas con scrypt de la stdlib
+(migración `0004`: `usuario.password_hash`), 5 intentos fallidos en 15 min ->
+429 con `Retry-After` (contador en memoria) y arranque que exige `JWT_SECRET`
+(>= 32 caracteres) fuera de desarrollo. Toda la API quedó protegida según la
+matriz de `docs/contrato-auth.md` (rol por router, propiedad de OT, papeleta y
+asignación por endpoint, `usuario_id`/`tecnico_id`/`remitente_id`/`operador_id`
+validados contra el token); el token se contrasta con la BD en cada request.
+`seed.py` asigna `SEED_PASSWORD` (default `facylitech2026`) a los 4 usuarios.
+Verificado: alembic upgrade/downgrade/upgrade limpios, seed idempotente,
+`pytest` en verde (matriz de autorización sobre todos los endpoints + casos de
+propiedad), `ruff` limpio y prueba manual con curl (login de operador y
+técnico, 401 sin token, 403 de técnico en endpoint de operador, 403 al leer la
+OT de otro técnico).
+
+**Pendiente / límites:** contador de intentos en memoria (no sobrevive
+reinicios ni varios workers); sin refresh ni revocación de tokens (cambiar la
+contraseña no invalida los emitidos); `/media` sigue público; ver
+`docs/decisiones.md`. El frontend (login, sesión, caché del service worker)
+lo implementa el otro agente contra este mismo contrato.
