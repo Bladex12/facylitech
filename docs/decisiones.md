@@ -177,3 +177,74 @@ parece servir.
   `geography` del ORM a `{lat, lon}`, así cualquier endpoint que devuelva un
   `Usuario` (incluidos los de backend-geo) obtiene la forma del contrato sin
   serializar a mano.
+
+## 2026-10-18 — Geo, despacho en cascada y evidencias (backend-geo)
+
+Contrato: `docs/contrato-api-octubre.md` §2. Decisiones tomadas donde el
+contrato dejaba margen:
+
+- **ETA = distancia / 25 km/h**, redondeado a minutos. Es un estimado de
+  línea recta para tráfico urbano de Santiago, no una ruta real (no se usa
+  ninguna API de ruteo).
+- **Distancia oficial en PostGIS** (`ST_Distance` sobre `geography`, mide en
+  el esferoide WGS84); Haversine (esfera) queda en `domain/cercania.py` como
+  respaldo y referencia de tests (coinciden ±1%; en Santiago difieren ~0,2%).
+  El orden SQL usa el operador KNN `<->` (aprovecha el índice GiST), pero no
+  se limita en SQL: el orden final (disponibles → especialidad → distancia)
+  se aplica en Python sobre todos los técnicos activos. Con ~20 usuarios
+  (RNF-06) es trivial y evita cortar un técnico disponible lejano por
+  técnicos ocupados cercanos.
+- **"Sin ubicación al final"** se interpreta *dentro de su grupo*: un técnico
+  disponible sin ubicación conocida queda antes que uno ocupado con
+  ubicación. La disponibilidad es el criterio principal del contrato.
+- **`disponible`** = `estado_disponibilidad == 'disponible'` (null cuenta
+  como no disponible).
+- **Tiempo de respuesta 5 min** (`TIEMPO_RESPUESTA_EMERGENCIA_MIN`).
+- **Evaluación perezosa, sin jobs**: `sincronizar_cascadas()` corre al
+  inicio de cada lectura/escritura relevante (listar/obtener/cerrar
+  emergencias, despachar, listar/aceptar/rechazar asignaciones). Revisa todas
+  las cascadas abiertas (pocas filas con RNF-06). Las expiraciones
+  encadenadas usan el **instante teórico** de vencimiento (si nadie consulta
+  por 12 min, el 1º expira a los 5 y el 2º se notifica a los 5, no a los 12),
+  así el resultado no depende de cuándo se lee.
+- **Re-despacho**: permitido mientras nadie haya aceptado y la emergencia no
+  esté cerrada (no solo con la cascada agotada); cancela las asignaciones
+  abiertas previas y la nueva cascada continúa la numeración de `orden`
+  (1, 2, 3 → 4, 5…) para que el historial completo quede ordenado.
+- **Solo se puede rechazar/aceptar una asignación `pendiente`**; las
+  `en_espera` aún no fueron notificadas.
+- **`cascada_agotada`** = hubo despacho y todas las asignaciones están
+  rechazadas/expiradas/canceladas; es `false` si la emergencia está cerrada.
+- **OT de emergencia**: si la emergencia no tiene ascensor se usa el primero
+  del edificio (por `codigo`); si el edificio no tiene equipos se responde
+  409 sin tocar la cascada (la OT requiere ascensor). `orden_trabajo_id` se
+  deriva de `orden_trabajo.emergencia_id` (la más reciente no cancelada).
+- **Validación del despacho** (422): lista vacía o con repetidos, IDs que no
+  son técnicos activos, `operador_id` que no es operador. 409: emergencia
+  cerrada o con una asignación ya aceptada.
+- **`SqlAsignacionRepository` no usa `populate_existing`**: la carga anidada
+  `Emergencia.asignaciones` re-poblaba las mismas instancias y les quitaba la
+  relación `emergencia` recién cargada (lazy load → `MissingGreenlet`). En su
+  lugar expira la sesión antes de cada lectura (siempre sin cambios
+  pendientes) y confirma todo junto (`agregar` + `confirmar`), así aceptar es
+  atómico.
+- **Evidencias**: además del content-type se valida la firma de bytes
+  (magic numbers) para no aceptar cualquier archivo declarado como imagen. El
+  archivo se escribe antes de insertar la fila; si el INSERT falla se borra.
+  Supabase usa la service key solo en el backend y la URL **pública** del
+  bucket (el bucket debe ser público; URLs firmadas quedan fuera por
+  simplicidad). Errores de Supabase → 502.
+- **Ubicación del técnico**: `POST /usuarios/{id}/ubicacion` solo guarda la
+  última posición (sin historial), base del tracking por eventos del 26-oct.
+
+## 2026-10-18 — Integración (orquestador)
+
+- **Completar una OT de emergencia cierra la emergencia y libera al técnico**
+  (`estado_disponibilidad = disponible`). Es el cierre natural del ciclo de
+  despacho; antes el técnico quedaba `en_terreno` indefinidamente.
+- **`POST /mensajes` valida `orden_trabajo_id`** (404 si no existe) en vez de
+  dejar caer un error de integridad de la BD.
+- **Los PDFs/Excel de la empresa no se versionan** en el repo (es público y
+  traen datos de contacto, aunque sean simulados); viven en la carpeta local
+  `Docs empresa/`. Su contenido quedó transcrito en `seed.py` y
+  `docs/datos-simulacion.md`.

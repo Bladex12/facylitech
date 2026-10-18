@@ -3,7 +3,13 @@ from uuid import UUID
 
 from app.application.errors import DatosInvalidosError, NoEncontradoError
 from app.application.interfaces.repositories import OrdenTrabajoRepository, UsuarioRepository
-from app.domain.enums import EstadoOrdenTrabajo, RolUsuario, TipoOrdenTrabajo
+from app.domain.enums import (
+    EstadoDisponibilidadTecnico,
+    EstadoEmergencia,
+    EstadoOrdenTrabajo,
+    RolUsuario,
+    TipoOrdenTrabajo,
+)
 from app.domain.transiciones import (
     validar_cancelar,
     validar_completar,
@@ -79,4 +85,11 @@ async def completar_orden(repo: OrdenTrabajoRepository, id_: UUID) -> OrdenTraba
     validar_completar(orden.estado, papeleta_enviada)
     orden.estado = EstadoOrdenTrabajo.COMPLETADO
     orden.fin_real = datetime.now(UTC)
+    if orden.tipo == TipoOrdenTrabajo.EMERGENCIA:
+        # Cierre de la atención: el técnico vuelve a estar disponible para la
+        # próxima cascada y la emergencia queda cerrada (ver docs/decisiones.md).
+        if orden.tecnico is not None:
+            orden.tecnico.estado_disponibilidad = EstadoDisponibilidadTecnico.DISPONIBLE
+        if orden.emergencia is not None and orden.emergencia.estado != EstadoEmergencia.CERRADA:
+            orden.emergencia.estado = EstadoEmergencia.CERRADA
     return await repo.guardar(orden)

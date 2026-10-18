@@ -25,3 +25,6 @@ Thumbs.db
 
 # Docker
 postgres-data/
+
+# Fotos de evidencia subidas en desarrollo (AlmacenamientoLocal)
+backend/media/

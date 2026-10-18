@@ -6,17 +6,26 @@ docs/decisiones.md: se descarta una capa extra de entidades de dominio
 puras por sobreingeniería para el tamaño de este proyecto).
 """
 
+from collections.abc import Sequence
 from datetime import date, datetime
 from typing import Protocol
 from uuid import UUID
 
-from app.domain.enums import CategoriaEquipo, EstadoOrdenTrabajo, RolUsuario, TipoOrdenTrabajo
+from app.domain.enums import (
+    CategoriaEquipo,
+    EstadoAsignacion,
+    EstadoOrdenTrabajo,
+    RolUsuario,
+    TipoOrdenTrabajo,
+)
 from app.infrastructure.db.models import (
     Administracion,
     Ascensor,
+    AsignacionEmergencia,
     Cliente,
     Edificio,
     Emergencia,
+    Evidencia,
     Mensaje,
     OrdenTrabajo,
     Papeleta,
@@ -62,6 +71,7 @@ class AscensorRepository(Protocol):
     async def crear(self, ascensor: Ascensor) -> Ascensor: ...
     async def guardar(self, ascensor: Ascensor) -> Ascensor: ...
     async def bitacora(self, ascensor_id: UUID) -> list[OrdenTrabajo]: ...
+    async def obtener_por_codigo_qr(self, codigo_qr: str) -> Ascensor | None: ...
 
 
 class UsuarioRepository(Protocol):
@@ -71,6 +81,10 @@ class UsuarioRepository(Protocol):
     async def obtener(self, id_: UUID) -> Usuario | None: ...
     async def crear(self, usuario: Usuario) -> Usuario: ...
     async def listar_activos(self, rol: RolUsuario) -> list[Usuario]: ...
+
+    async def actualizar_ubicacion(
+        self, usuario: Usuario, lat: float, lon: float, momento: datetime
+    ) -> Usuario: ...
 
 
 class PautaRepository(Protocol):
@@ -124,3 +138,39 @@ class MensajeRepository(Protocol):
     async def hilo(self, usuario_id: UUID, contraparte_id: UUID) -> list[Mensaje]: ...
     async def crear(self, mensaje: Mensaje) -> Mensaje: ...
     async def marcar_leidos(self, usuario_id: UUID, contraparte_id: UUID, ahora: datetime) -> int: ...
+
+
+    async def agregar_evidencia(self, evidencia: Evidencia) -> Evidencia: ...
+    async def obtener_evidencia(self, evidencia_id: UUID) -> Evidencia | None: ...
+    async def eliminar_evidencia(self, evidencia: Evidencia) -> Papeleta: ...
+
+
+# --- Contrato octubre 2026: geo, cascada ------------------------------------
+
+
+class TecnicoConDistanciaLike(Protocol):
+    tecnico: Usuario
+    distancia_m: float | None
+    ordenes_en_curso: int
+
+
+class TecnicoRepository(Protocol):
+    async def con_distancia(
+        self, lat: float, lon: float, tecnico_ids: list[UUID] | None = None
+    ) -> Sequence[TecnicoConDistanciaLike]: ...
+
+
+class AsignacionRepository(Protocol):
+    async def obtener(self, id_: UUID) -> AsignacionEmergencia | None: ...
+    async def listar(
+        self, tecnico_id: UUID | None, estado: EstadoAsignacion | None
+    ) -> list[AsignacionEmergencia]: ...
+    async def de_cascadas_abiertas(self) -> list[AsignacionEmergencia]: ...
+    async def primer_ascensor_id(self, edificio_id: UUID) -> UUID | None: ...
+    async def emergencia(self, emergencia_id: UUID) -> Emergencia | None: ...
+    def agregar(self, *objetos) -> None: ...
+    async def confirmar(self) -> None: ...
+
+
+class MapaRepository(Protocol):
+    async def datos(self, inicio_dia: datetime, fin_dia: datetime): ...

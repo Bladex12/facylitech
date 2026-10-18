@@ -64,3 +64,11 @@ class SqlAscensorRepository:
         )
         rows = (await self.session.execute(stmt)).scalars().all()
         return list(rows)
+
+    async def obtener_por_codigo_qr(self, codigo_qr: str) -> Ascensor | None:
+        stmt = (
+            select(Ascensor)
+            .where(Ascensor.codigo_qr == codigo_qr)
+            .options(selectinload(Ascensor.edificio))
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()

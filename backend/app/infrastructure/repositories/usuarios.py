@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -5,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.enums import RolUsuario
 from app.infrastructure.db.models import Usuario
+from app.infrastructure.geo import punto_desde_coords
 
 
 class SqlUsuarioRepository:
@@ -39,3 +41,12 @@ class SqlUsuarioRepository:
     async def listar_activos(self, rol: RolUsuario) -> list[Usuario]:
         stmt = select(Usuario).where(Usuario.rol == rol, Usuario.activo.is_(True)).order_by(Usuario.nombre)
         return list((await self.session.execute(stmt)).scalars().all())
+
+    async def actualizar_ubicacion(
+        self, usuario: Usuario, lat: float, lon: float, momento: datetime
+    ) -> Usuario:
+        usuario.ultima_ubicacion = punto_desde_coords(lat, lon)
+        usuario.ultima_ubicacion_at = momento
+        await self.session.commit()
+        await self.session.refresh(usuario)
+        return usuario

@@ -43,3 +43,24 @@ def test_contrapartes_por_defecto_sin_mensajes_van_al_final_sin_duplicar():
 def test_ignora_mensajes_de_terceros():
     yo, a, b = uuid4(), uuid4(), uuid4()
     assert resumir_conversaciones(yo, [_m(a, b, 1)]) == []
+
+
+async def test_enviar_mensaje_con_orden_inexistente_da_404(client, db_session):
+    import uuid as _uuid
+
+    from app.infrastructure.db.models import Usuario
+
+    a = Usuario(nombre="Op", email=f"op-{_uuid.uuid4()}@x.cl", rol="operador")
+    b = Usuario(nombre="Tec", email=f"tec-{_uuid.uuid4()}@x.cl", rol="tecnico")
+    db_session.add_all([a, b])
+    await db_session.flush()
+    resp = await client.post(
+        "/api/v1/mensajes",
+        json={
+            "remitente_id": str(a.id),
+            "destinatario_id": str(b.id),
+            "texto": "hola",
+            "orden_trabajo_id": str(_uuid.uuid4()),
+        },
+    )
+    assert resp.status_code == 404

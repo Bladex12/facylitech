@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Response
 
-from app.api.v1.deps import MensajeRepoDep, UsuarioRepoDep
+from app.api.v1.deps import MensajeRepoDep, OrdenRepoDep, UsuarioRepoDep
 from app.api.v1.schemas.mensajes import (
     Contraparte,
     ConversacionOut,
@@ -51,7 +51,9 @@ async def hilo(
 
 
 @router.post("", response_model=MensajeOut, status_code=201)
-async def enviar(datos: MensajeCrear, repo: MensajeRepoDep, usuario_repo: UsuarioRepoDep):
+async def enviar(
+    datos: MensajeCrear, repo: MensajeRepoDep, usuario_repo: UsuarioRepoDep, orden_repo: OrdenRepoDep
+):
     try:
         return await enviar_mensaje(
             repo,
@@ -60,6 +62,7 @@ async def enviar(datos: MensajeCrear, repo: MensajeRepoDep, usuario_repo: Usuari
             datos.destinatario_id,
             datos.texto,
             datos.orden_trabajo_id,
+            orden_repo,
         )
     except NoEncontradoError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

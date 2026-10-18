@@ -178,3 +178,46 @@ emergencias activas sin despachar). 44 tests pasando, ruff limpio.
 **Pendiente:** confirmar con la empresa la lista de
 `docs/datos-simulacion.md` §4 (discrepancias Excel/diagrama, coordenadas,
 operador, especialidades, pautas reales, SLA, correos `.py`).
+
+## 2026-10-18 — Storage de fotos (Evidencia) [backend]
+
+`POST /papeletas/{id}/evidencias` (multipart `archivo` + `tipo` opcional;
+JPEG/PNG/WebP validados por content-type **y** firma de bytes, ≤ 8 MB → 422;
+409 si la papeleta está enviada) y `DELETE /papeletas/{id}/evidencias/{eid}`.
+`PapeletaOut.evidencias`. Puerto `AlmacenamientoArchivos`
+(`application/interfaces/storage.py`) con `AlmacenamientoLocal`
+(`backend/media/`, servido en `/media`) y `AlmacenamientoSupabase` (REST con
+httpx), elegido con `STORAGE_BACKEND`. Tests: subida/borrado real en tmp dir
+y adaptador Supabase con `httpx.MockTransport`.
+
+**Pendiente:** crear el bucket público en Supabase y probar contra el
+proyecto real; UI de fotos en la papeleta (frontend-tecnico).
+
+## 2026-10-18 — Algoritmo geográfico (Haversine/PostGIS) [backend]
+
+`domain/cercania.py` (Haversine, ETA a 25 km/h, orden de candidatos:
+disponibles → especialidad → distancia). Distancia real en BD con
+`ST_Distance(geography)` y orden KNN `<->` sobre el índice GiST
+(`infrastructure/repositories/tecnicos.py`); test de integración que la
+compara con Haversine (±1%). Endpoints `GET /tecnicos/cercanos`,
+`GET /emergencias/{id}/candidatos`, `POST /usuarios/{id}/ubicacion`,
+`GET /mapa`, `GET /ascensores/qr/{codigo_qr}`.
+
+**Pendiente:** que la PWA envíe la ubicación en los eventos (aceptar,
+iniciar) — Gantt 26-oct; el seed aún no trae `ultima_ubicacion` de técnicos.
+
+## 2026-10-18 — Lógica de asignación en cascada [backend]
+
+Migración `0003` (`asignacion_emergencia`). `domain/cascada.py`: máquina de
+estados pura (`en_espera → pendiente → aceptada|rechazada|expirada`,
+`cancelada`) con evaluación perezosa y expiraciones encadenadas en tiempo
+teórico. `POST /emergencias/{id}/despachar` (el operador aprueba el orden),
+`GET /asignaciones`, `POST /asignaciones/{id}/aceptar|rechazar`; aceptar
+crea la OT de emergencia (crítica) y deja al técnico `en_terreno`; cerrar la
+emergencia cancela lo abierto. `EmergenciaOut` con `ubicacion`,
+`asignaciones`, `cascada_agotada`, `orden_trabajo_id`. 40+ tests (dominio +
+API).
+
+**Pendiente:** notificación activa al técnico (hoy la PWA debe hacer polling
+de `GET /asignaciones`); devolver al técnico a `disponible` al completar la
+OT de emergencia.

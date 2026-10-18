@@ -21,6 +21,7 @@ from sqlalchemy.sql import func
 from app.domain.enums import (
     CategoriaEquipo,
     EstadoAscensor,
+    EstadoAsignacion,
     EstadoDisponibilidadTecnico,
     EstadoEmergencia,
     EstadoOrdenTrabajo,
@@ -200,6 +201,11 @@ class Emergencia(Base):
     edificio: Mapped["Edificio"] = relationship()
     ascensor: Mapped["Ascensor | None"] = relationship()
     ordenes: Mapped[list["OrdenTrabajo"]] = relationship(back_populates="emergencia")
+    asignaciones: Mapped[list["AsignacionEmergencia"]] = relationship(
+        back_populates="emergencia",
+        cascade="all, delete-orphan",
+        order_by="AsignacionEmergencia.orden",
+    )
 
 
 class OrdenTrabajo(Base):
@@ -352,3 +358,34 @@ class Mensaje(Base):
 
     remitente: Mapped["Usuario"] = relationship(foreign_keys=[remitente_id])
     destinatario: Mapped["Usuario"] = relationship(foreign_keys=[destinatario_id])
+
+
+class AsignacionEmergencia(Base):
+    """Un técnico dentro de la cascada de despacho de una emergencia (ver domain/cascada.py)."""
+
+    __tablename__ = "asignacion_emergencia"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    emergencia_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("emergencia.id", ondelete="CASCADE"), nullable=False
+    )
+    tecnico_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("usuario.id", ondelete="CASCADE"), nullable=False
+    )
+    orden: Mapped[int] = mapped_column(Integer, nullable=False)
+    estado: Mapped[EstadoAsignacion] = mapped_column(
+        String(20), nullable=False, default=EstadoAsignacion.EN_ESPERA
+    )
+    distancia_m: Mapped[float | None] = mapped_column(Float)
+    notificada_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    respondida_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    motivo_rechazo: Mapped[str | None] = mapped_column(Text)
+    operador_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("usuario.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    emergencia: Mapped["Emergencia"] = relationship(back_populates="asignaciones")
+    tecnico: Mapped["Usuario"] = relationship(foreign_keys=[tecnico_id])

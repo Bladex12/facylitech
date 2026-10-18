@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.api.v1.schemas.common import Coordenadas
 from app.domain.enums import Especialidad, EstadoDisponibilidadTecnico, RolUsuario
@@ -34,8 +34,15 @@ class UsuarioOut(UsuarioBase):
     @field_validator("ultima_ubicacion", mode="before")
     @classmethod
     def _geography_a_coordenadas(cls, valor):
-        """Al validar desde el ORM llega un `geography` (WKB): se convierte a {lat, lon}."""
-        if valor is None or isinstance(valor, (dict, Coordenadas)):
+        # El ORM entrega un WKBElement (o WKTElement recién asignado), no {lat, lon}.
+        if valor is None or isinstance(valor, dict | Coordenadas):
             return valor
         coords = coords_desde_punto(valor)
         return None if coords is None else Coordenadas(lat=coords[0], lon=coords[1])
+
+
+class UbicacionActualizar(BaseModel):
+    """Body de POST /usuarios/{id}/ubicacion: {lat, lon}."""
+
+    lat: float = Field(ge=-90, le=90)
+    lon: float = Field(ge=-180, le=180)

@@ -5,7 +5,11 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from app.application.errors import DatosInvalidosError, NoEncontradoError
-from app.application.interfaces.repositories import MensajeRepository, UsuarioRepository
+from app.application.interfaces.repositories import (
+    MensajeRepository,
+    OrdenTrabajoRepository,
+    UsuarioRepository,
+)
 from app.domain.mensajeria import MensajeDatos, resumir_conversaciones, rol_contraparte_por_defecto
 from app.infrastructure.db.models import Mensaje, Usuario
 
@@ -71,6 +75,7 @@ async def enviar_mensaje(
     destinatario_id: UUID,
     texto: str,
     orden_trabajo_id: UUID | None = None,
+    orden_repo: OrdenTrabajoRepository | None = None,
 ) -> Mensaje:
     if remitente_id == destinatario_id:
         raise DatosInvalidosError("No se puede enviar un mensaje a uno mismo.")
@@ -79,6 +84,9 @@ async def enviar_mensaje(
         raise DatosInvalidosError("El texto del mensaje no puede estar vacío.")
     await _usuario(usuario_repo, remitente_id)
     await _usuario(usuario_repo, destinatario_id)
+    if orden_trabajo_id is not None and orden_repo is not None:
+        if await orden_repo.obtener(orden_trabajo_id) is None:
+            raise NoEncontradoError(f"Orden de trabajo {orden_trabajo_id} no encontrada.")
     # created_at se fija en la aplicación (no con now() de Postgres, que es la
     # hora de inicio de la transacción) para que el orden del hilo sea estable.
     mensaje = Mensaje(
