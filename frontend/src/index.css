@@ -32,3 +32,9 @@ body {
 .font-mono-brand {
   font-family: "DM Mono", ui-monospace, monospace;
 }
+
+/* Barra indeterminada de subida de fotos (papeleta del técnico). */
+@keyframes deslizar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}

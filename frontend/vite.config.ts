@@ -19,8 +19,8 @@ export default defineConfig({
         start_url: '/tecnico/',
         scope: '/tecnico/',
         display: 'standalone',
-        background_color: '#f3f4f6',
-        theme_color: '#1e2a78',
+        background_color: '#f4f4f2',
+        theme_color: '#0d1b2a',
         icons: [
           { src: '/icons/icon-192.svg', sizes: '192x192', type: 'image/svg+xml' },
           { src: '/icons/icon-512.svg', sizes: '512x512', type: 'image/svg+xml' },
@@ -28,6 +28,28 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // RNF-02: con mala señal se muestran los últimos datos en vez de una pantalla rota.
+        // Solo GET (las escrituras nunca se cachean); la red manda si responde en 6 s.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url, request }) =>
+              request.method === 'GET' && url.pathname.includes('/api/v1/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-get',
+              networkTimeoutSeconds: 6,
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/media/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'evidencias',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
       },
     }),
   ],

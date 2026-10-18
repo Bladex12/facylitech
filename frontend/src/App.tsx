@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import { SelectorUsuario } from './auth/SelectorUsuario'
-import { Proximamente } from './components/Proximamente'
 import { OperadorLayout } from './routes/operador/Layout'
 import { Dashboard } from './routes/operador/Dashboard'
 import { Emergencias } from './routes/operador/Emergencias'
@@ -14,6 +13,11 @@ import { AgendaOperador } from './routes/operador/agenda/AgendaOperador'
 import { TecnicoLayout } from './routes/tecnico/Layout'
 import { Agenda } from './routes/tecnico/Agenda'
 import { OrdenDetalle } from './routes/tecnico/OrdenDetalle'
+import { Trabajos } from './routes/tecnico/Trabajos'
+import { Mapa as MapaTecnico } from './routes/tecnico/Mapa'
+import { Emergencias as EmergenciasTecnico } from './routes/tecnico/Emergencias'
+import { Escanear } from './routes/tecnico/Escanear'
+import { Mensajeria } from './components/mensajes/Mensajeria'
 
 function RequireOperador({ children }: { children: ReactNode }) {
   const { usuario } = useAuth()
@@ -50,7 +54,7 @@ export default function App() {
         <Route path="ascensores/*" element={<Ascensores />} />
         <Route path="emergencias" element={<Emergencias />} />
         <Route path="tecnicos" element={<Tecnicos />} />
-        <Route path="mensajes" element={<Proximamente titulo="Mensajes" />} />
+        <Route path="mensajes" element={<Mensajeria modo="escritorio" />} />
       </Route>
 
       <Route
@@ -64,10 +68,14 @@ export default function App() {
         <Route index element={<Navigate to="agenda" replace />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="ordenes/:id" element={<OrdenDetalle />} />
-        <Route path="trabajos" element={<Proximamente titulo="Trabajos" />} />
-        <Route path="mapa" element={<Proximamente titulo="Mapa" />} />
-        <Route path="emergencias" element={<Proximamente titulo="Emergencias" />} />
-        <Route path="mensajes" element={<Proximamente titulo="Mensajes" />} />
+        <Route path="trabajos" element={<Trabajos />} />
+        <Route path="mapa" element={<MapaTecnico />} />
+        <Route path="emergencias" element={<EmergenciasTecnico />} />
+        <Route path="escanear" element={<Escanear />} />
+        <Route
+          path="mensajes"
+          element={<Mensajeria modo="movil" rutaOrden={(id) => `/tecnico/ordenes/${id}`} />}
+        />
       </Route>
     </Routes>
   )

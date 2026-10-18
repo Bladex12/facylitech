@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Building2, Wifi, Zap } from 'lucide-react'
 import { useAuth } from '../../auth/AuthContext'
 import { endpoints } from '../../api/endpoints'
+import { useNoLeidos } from '../../components/mensajes/useMensajes'
 
 const HOY = new Date()
 const MES_ACTUAL = `${HOY.getFullYear()}-${String(HOY.getMonth() + 1).padStart(2, '0')}`
@@ -22,7 +23,15 @@ const NAV_EQUIPO = [
   { to: '/operador/mensajes', label: 'Mensajes' },
 ]
 
-function Seccion({ titulo, items }: { titulo: string; items: { to: string; label: string }[] }) {
+function Seccion({
+  titulo,
+  items,
+  badges = {},
+}: {
+  titulo: string
+  items: { to: string; label: string }[]
+  badges?: Record<string, number>
+}) {
   return (
     <div className="mb-4">
       <p className="mb-1 px-2 text-[9px] font-mono tracking-widest text-slate-600 uppercase">
@@ -34,7 +43,7 @@ function Seccion({ titulo, items }: { titulo: string; items: { to: string; label
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `mb-0.5 block rounded px-2.5 py-2 text-sm font-medium transition-all ${
+              `mb-0.5 flex items-center justify-between rounded px-2.5 py-2 text-sm font-medium transition-all ${
                 isActive
                   ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
                   : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
@@ -42,6 +51,11 @@ function Seccion({ titulo, items }: { titulo: string; items: { to: string; label
             }
           >
             {item.label}
+            {(badges[item.to] ?? 0) > 0 && (
+              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--color-accent)] px-1 text-[10px] font-bold text-white">
+                {badges[item.to]}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
@@ -58,6 +72,7 @@ export function OperadorLayout() {
   })
 
   const emergencias = calendario?.emergencias_abiertas ?? []
+  const noLeidos = useNoLeidos(usuario?.id)
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--color-bg)' }}>
@@ -74,7 +89,7 @@ export function OperadorLayout() {
         <div className="flex-1 px-3 py-3">
           <Seccion titulo="General" items={NAV_GENERAL} />
           <Seccion titulo="Trabajos" items={NAV_TRABAJOS} />
-          <Seccion titulo="Equipo" items={NAV_EQUIPO} />
+          <Seccion titulo="Equipo" items={NAV_EQUIPO} badges={{ '/operador/mensajes': noLeidos }} />
         </div>
         <div className="border-t border-white/[0.07] px-3 pt-3">
           <div className="mb-2 flex items-center gap-2.5 px-2">

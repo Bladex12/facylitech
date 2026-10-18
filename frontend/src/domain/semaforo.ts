@@ -14,6 +14,14 @@ export const SEMAFORO_DOT_CLASS: Record<Semaforo, string> = {
   programado: 'bg-blue-500',
 }
 
+/** Mismos colores en hex, para marcadores de Leaflet (que no usan clases Tailwind). */
+export const SEMAFORO_HEX: Record<Semaforo, string> = {
+  completado: '#10b981',
+  vencido: '#ef4444',
+  en_curso: '#f59e0b',
+  programado: '#3b82f6',
+}
+
 export const SEMAFORO_BADGE_CLASS: Record<Semaforo, string> = {
   completado: 'bg-emerald-100 text-emerald-800',
   vencido: 'bg-red-100 text-red-800',
