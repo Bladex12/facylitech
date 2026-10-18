@@ -147,6 +147,8 @@ class Usuario(Base):
     estado_disponibilidad: Mapped[EstadoDisponibilidadTecnico | None] = mapped_column(String(20))
     ultima_ubicacion = mapped_column(Geography(geometry_type="POINT", srid=4326), nullable=True)
     ultima_ubicacion_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Hash scrypt (ver domain/seguridad.py). NULL = sin acceso. Nunca sale en un schema.
+    password_hash: Mapped[str | None] = mapped_column(String(200))
 
     ordenes_asignadas: Mapped[list["OrdenTrabajo"]] = relationship(back_populates="tecnico")
 
