@@ -16,6 +16,7 @@ import type {
   BitacoraEntrada,
   CalendarioMes,
   Cliente,
+  LoginRespuesta,
   Edificio,
   Emergencia,
   OrdenTrabajo,
@@ -26,6 +27,17 @@ import type {
 } from './types'
 
 export const endpoints = {
+  auth: {
+    login: (email: string, password: string) =>
+      api.post<LoginRespuesta>('/auth/login', { email, password }),
+    me: () => api.get<Usuario>('/auth/me'),
+    /** 400 si la actual no coincide, la nueva es corta o igual a la actual. */
+    cambiarPassword: (passwordActual: string, passwordNueva: string) =>
+      api.post<void>('/auth/cambiar-password', {
+        password_actual: passwordActual,
+        password_nueva: passwordNueva,
+      }),
+  },
   clientes: {
     listar: () => api.get<Pagina<Cliente>>('/clientes'),
     administraciones: (clienteId: string) =>
@@ -55,6 +67,9 @@ export const endpoints = {
   usuarios: {
     listar: (rol?: string) => api.get<Pagina<Usuario>>(`/usuarios${toQueryString({ rol })}`),
     obtener: (id: string) => api.get<Usuario>(`/usuarios/${id}`),
+    /** Solo operador: restablece la contraseña de otro usuario (204). */
+    restablecerPassword: (id: string, passwordNueva: string) =>
+      api.put<void>(`/usuarios/${id}/password`, { password_nueva: passwordNueva }),
     /** Base del tracking GPS por eventos (Gantt 26-oct): el front la llama al iniciar/terminar. */
     reportarUbicacion: (id: string, coords: Coordenadas) =>
       api.post<Usuario>(`/usuarios/${id}/ubicacion`, coords),

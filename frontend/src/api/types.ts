@@ -139,6 +139,15 @@ export interface Usuario {
   ultima_ubicacion_at: string | null
 }
 
+/** Respuesta de `POST /auth/login` (docs/contrato-auth.md). */
+export interface LoginRespuesta {
+  access_token: string
+  token_type: 'bearer'
+  /** ISO 8601 con zona. */
+  expira_at: string
+  usuario: Usuario
+}
+
 export interface PautaItem {
   id: string
   orden: number
