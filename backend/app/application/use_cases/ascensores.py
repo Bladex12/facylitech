@@ -20,3 +20,7 @@ async def crear_ascensor(repo: AscensorRepository, ascensor: Ascensor) -> Ascens
 
 async def bitacora_ascensor(repo: AscensorRepository, ascensor_id: UUID):
     return await repo.bitacora(ascensor_id)
+
+
+async def obtener_ascensor_por_qr(repo: AscensorRepository, codigo_qr: str) -> Ascensor | None:
+    return await repo.obtener_por_codigo_qr(codigo_qr)

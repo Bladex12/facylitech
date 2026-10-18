@@ -15,6 +15,7 @@ from app.application.use_cases.ascensores import (
     crear_ascensor,
     listar_ascensores,
     obtener_ascensor,
+    obtener_ascensor_por_qr,
 )
 from app.infrastructure.db.models import Ascensor
 
@@ -30,6 +31,16 @@ async def listar(
 ):
     items, total = await listar_ascensores(repo, limit, offset, edificio_id)
     return Pagina(items=items, total=total, limit=limit, offset=offset)
+
+
+@router.get("/qr/{codigo_qr}", response_model=AscensorOut)
+async def obtener_por_qr(codigo_qr: str, repo: AscensorRepoDep):
+    """Lector QR del técnico: resuelve el código pegado en la sala de máquinas.
+    Declarada antes de `/{id_}` para que no choquen."""
+    ascensor = await obtener_ascensor_por_qr(repo, codigo_qr)
+    if ascensor is None:
+        raise HTTPException(status_code=404, detail=f"No hay un equipo con código QR '{codigo_qr}'.")
+    return ascensor
 
 
 @router.get("/{id_}", response_model=AscensorOut)

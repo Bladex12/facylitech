@@ -63,5 +63,19 @@ class PapeletaOut(BaseModel):
     # Total de ítems de la pauta (sin filtrar por mes); permite mostrar
     # "Este mes corresponden X de Y ítems". None si la orden no tiene pauta.
     total_items_pauta: int | None = None
+    # Fotos de evidencia; `url` es relativa (/media/...) en local y absoluta en Supabase.
+    evidencias: list["EvidenciaOut"] = []
 
     model_config = {"from_attributes": True}
+
+
+class EvidenciaOut(BaseModel):
+    id: UUID
+    url: str
+    tipo: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+PapeletaOut.model_rebuild()

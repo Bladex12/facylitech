@@ -1,11 +1,18 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.v1.deps import UsuarioRepoDep
 from app.api.v1.schemas.common import Pagina
-from app.api.v1.schemas.usuarios import UsuarioCrear, UsuarioOut
-from app.application.use_cases.usuarios import crear_usuario, listar_usuarios, obtener_usuario
+from app.api.v1.schemas.usuarios import UbicacionActualizar, UsuarioCrear, UsuarioOut
+from app.application.errors import NoEncontradoError
+from app.application.use_cases.usuarios import (
+    crear_usuario,
+    listar_usuarios,
+    obtener_usuario,
+    registrar_ubicacion,
+)
 from app.domain.enums import RolUsuario
 from app.infrastructure.db.models import Usuario
 
@@ -35,3 +42,13 @@ async def obtener(id_: UUID, repo: UsuarioRepoDep):
 async def crear(datos: UsuarioCrear, repo: UsuarioRepoDep):
     usuario = Usuario(**datos.model_dump())
     return await crear_usuario(repo, usuario)
+
+
+@router.post("/{id_}/ubicacion", response_model=UsuarioOut)
+async def registrar_ubicacion_usuario(id_: UUID, datos: UbicacionActualizar, repo: UsuarioRepoDep):
+    """Registra la última ubicación conocida (el técnico la envía al iniciar/
+    aceptar trabajos o con un botón; no hay tracking continuo)."""
+    try:
+        return await registrar_ubicacion(repo, id_, datos.lat, datos.lon, datetime.now(UTC))
+    except NoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

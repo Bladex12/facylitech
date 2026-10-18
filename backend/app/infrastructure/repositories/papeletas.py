@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.infrastructure.db.models import Papeleta, PapeletaItem, PiezaReemplazada
+from app.infrastructure.db.models import Evidencia, Papeleta, PapeletaItem, PiezaReemplazada
 
 
 class SqlPapeletaRepository:
@@ -58,4 +58,19 @@ class SqlPapeletaRepository:
         if pieza is not None and pieza.papeleta_id == papeleta_id:
             await self.session.delete(pieza)
             await self.session.commit()
+        return await self.obtener(papeleta_id)
+
+    async def agregar_evidencia(self, evidencia: Evidencia) -> Evidencia:
+        self.session.add(evidencia)
+        await self.session.commit()
+        await self.session.refresh(evidencia)
+        return evidencia
+
+    async def obtener_evidencia(self, evidencia_id: UUID) -> Evidencia | None:
+        return await self.session.get(Evidencia, evidencia_id)
+
+    async def eliminar_evidencia(self, evidencia: Evidencia) -> Papeleta:
+        papeleta_id = evidencia.papeleta_id
+        await self.session.delete(evidencia)
+        await self.session.commit()
         return await self.obtener(papeleta_id)
