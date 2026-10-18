@@ -3,13 +3,19 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.api.v1.deps import OrdenRepoDep, PapeletaRepoDep
+from app.api.v1.deps import OrdenRepoDep, PapeletaRepoDep, UsuarioRepoDep
 from app.api.v1.schemas.common import Pagina
-from app.api.v1.schemas.ordenes_trabajo import OrdenTrabajoCrear, OrdenTrabajoOut
+from app.api.v1.schemas.ordenes_trabajo import (
+    OrdenTrabajoActualizar,
+    OrdenTrabajoCrear,
+    OrdenTrabajoOut,
+)
 from app.api.v1.schemas.papeletas import PapeletaOut
 from app.api.v1.serializers import construir_orden_out
-from app.application.errors import NoEncontradoError
+from app.application.errors import DatosInvalidosError, NoEncontradoError
 from app.application.use_cases.ordenes_trabajo import (
+    actualizar_orden,
+    cancelar_orden,
     completar_orden,
     crear_orden,
     iniciar_orden,
@@ -72,6 +78,32 @@ async def crear(datos: OrdenTrabajoCrear, repo: OrdenRepoDep):
     )
     creada = await crear_orden(repo, orden)
     return construir_orden_out(creada, datetime.now(UTC))
+
+
+@router.patch("/{id_}", response_model=OrdenTrabajoOut)
+async def actualizar(
+    id_: UUID, datos: OrdenTrabajoActualizar, repo: OrdenRepoDep, usuario_repo: UsuarioRepoDep
+):
+    try:
+        orden = await actualizar_orden(repo, usuario_repo, id_, datos.cambios())
+    except NoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except TransicionInvalidaError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except DatosInvalidosError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return construir_orden_out(orden, datetime.now(UTC))
+
+
+@router.post("/{id_}/cancelar", response_model=OrdenTrabajoOut)
+async def cancelar(id_: UUID, repo: OrdenRepoDep):
+    try:
+        orden = await cancelar_orden(repo, id_)
+    except NoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except TransicionInvalidaError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return construir_orden_out(orden, datetime.now(UTC))
 
 
 @router.post("/{id_}/iniciar", response_model=OrdenTrabajoOut)

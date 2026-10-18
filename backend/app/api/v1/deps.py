@@ -9,6 +9,7 @@ from app.infrastructure.repositories.ascensores import SqlAscensorRepository
 from app.infrastructure.repositories.clientes import SqlClienteRepository
 from app.infrastructure.repositories.edificios import SqlEdificioRepository
 from app.infrastructure.repositories.emergencias import SqlEmergenciaRepository
+from app.infrastructure.repositories.mensajes import SqlMensajeRepository
 from app.infrastructure.repositories.ordenes_trabajo import SqlOrdenTrabajoRepository
 from app.infrastructure.repositories.papeletas import SqlPapeletaRepository
 from app.infrastructure.repositories.pautas import SqlPautaRepository
@@ -62,3 +63,10 @@ PautaRepoDep = Annotated[SqlPautaRepository, Depends(get_pauta_repo)]
 EmergenciaRepoDep = Annotated[SqlEmergenciaRepository, Depends(get_emergencia_repo)]
 OrdenRepoDep = Annotated[SqlOrdenTrabajoRepository, Depends(get_orden_repo)]
 PapeletaRepoDep = Annotated[SqlPapeletaRepository, Depends(get_papeleta_repo)]
+
+
+def get_mensaje_repo(session: SessionDep) -> SqlMensajeRepository:
+    return SqlMensajeRepository(session)
+
+
+MensajeRepoDep = Annotated[SqlMensajeRepository, Depends(get_mensaje_repo)]

@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.domain.enums import EstadoOrdenTrabajo
+from app.domain.enums import CategoriaEquipo, EstadoOrdenTrabajo
 from app.infrastructure.db.models import Ascensor, OrdenTrabajo, Papeleta, PautaMantencion
 
 
@@ -13,13 +13,20 @@ class SqlAscensorRepository:
         self.session = session
 
     async def listar(
-        self, limit: int, offset: int, edificio_id: UUID | None
+        self,
+        limit: int,
+        offset: int,
+        edificio_id: UUID | None,
+        categoria: CategoriaEquipo | None = None,
     ) -> tuple[list[Ascensor], int]:
         stmt = select(Ascensor)
         count_stmt = select(func.count()).select_from(Ascensor)
         if edificio_id is not None:
             stmt = stmt.where(Ascensor.edificio_id == edificio_id)
             count_stmt = count_stmt.where(Ascensor.edificio_id == edificio_id)
+        if categoria is not None:
+            stmt = stmt.where(Ascensor.categoria == categoria)
+            count_stmt = count_stmt.where(Ascensor.categoria == categoria)
         total = (await self.session.execute(count_stmt)).scalar_one()
         stmt = stmt.options(selectinload(Ascensor.edificio)).order_by(Ascensor.codigo)
         rows = (await self.session.execute(stmt.limit(limit).offset(offset))).scalars().all()
@@ -34,6 +41,10 @@ class SqlAscensorRepository:
         await self.session.commit()
         await self.session.refresh(ascensor, attribute_names=["edificio"])
         return ascensor
+
+    async def guardar(self, ascensor: Ascensor) -> Ascensor:
+        await self.session.commit()
+        return await self.obtener(ascensor.id)
 
     async def bitacora(self, ascensor_id: UUID) -> list[OrdenTrabajo]:
         """Query (no tabla): órdenes completadas de un ascensor con su papeleta y piezas."""

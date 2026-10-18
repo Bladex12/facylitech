@@ -4,18 +4,22 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.api.v1.deps import AscensorRepoDep
 from app.api.v1.schemas.ascensores import (
+    AscensorActualizar,
     AscensorCrear,
     AscensorOut,
     BitacoraEntrada,
     PiezaBitacora,
 )
 from app.api.v1.schemas.common import Pagina
+from app.application.errors import NoEncontradoError
 from app.application.use_cases.ascensores import (
+    actualizar_ascensor,
     bitacora_ascensor,
     crear_ascensor,
     listar_ascensores,
     obtener_ascensor,
 )
+from app.domain.enums import CategoriaEquipo
 from app.infrastructure.db.models import Ascensor
 
 router = APIRouter(prefix="/ascensores", tags=["ascensores"])
@@ -27,8 +31,9 @@ async def listar(
     limit: int = Query(20, ge=1, le=100),
     offset: int = 0,
     edificio_id: UUID | None = None,
+    categoria: CategoriaEquipo | None = None,
 ):
-    items, total = await listar_ascensores(repo, limit, offset, edificio_id)
+    items, total = await listar_ascensores(repo, limit, offset, edificio_id, categoria)
     return Pagina(items=items, total=total, limit=limit, offset=offset)
 
 
@@ -44,6 +49,14 @@ async def obtener(id_: UUID, repo: AscensorRepoDep):
 async def crear(datos: AscensorCrear, repo: AscensorRepoDep):
     ascensor = Ascensor(**datos.model_dump())
     return await crear_ascensor(repo, ascensor)
+
+
+@router.patch("/{id_}", response_model=AscensorOut)
+async def actualizar(id_: UUID, datos: AscensorActualizar, repo: AscensorRepoDep):
+    try:
+        return await actualizar_ascensor(repo, id_, datos.cambios())
+    except NoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/{id_}/bitacora", response_model=list[BitacoraEntrada])

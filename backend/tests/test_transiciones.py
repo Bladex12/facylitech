@@ -1,7 +1,13 @@
 import pytest
 
 from app.domain.enums import EstadoOrdenTrabajo
-from app.domain.transiciones import TransicionInvalidaError, validar_completar, validar_iniciar
+from app.domain.transiciones import (
+    TransicionInvalidaError,
+    validar_cancelar,
+    validar_completar,
+    validar_editable,
+    validar_iniciar,
+)
 
 
 def test_iniciar_desde_programado_ok():
@@ -29,3 +35,17 @@ def test_completar_sin_papeleta_enviada_falla():
 def test_completar_desde_estado_incorrecto_falla():
     with pytest.raises(TransicionInvalidaError):
         validar_completar(EstadoOrdenTrabajo.PROGRAMADO, papeleta_enviada=True)
+
+
+@pytest.mark.parametrize("estado", [EstadoOrdenTrabajo.PROGRAMADO, EstadoOrdenTrabajo.EN_CURSO])
+def test_cancelar_y_editar_orden_abierta_ok(estado):
+    validar_cancelar(estado)  # no lanza
+    validar_editable(estado)  # no lanza
+
+
+@pytest.mark.parametrize("estado", [EstadoOrdenTrabajo.COMPLETADO, EstadoOrdenTrabajo.CANCELADO])
+def test_cancelar_o_editar_orden_cerrada_falla(estado):
+    with pytest.raises(TransicionInvalidaError):
+        validar_cancelar(estado)
+    with pytest.raises(TransicionInvalidaError):
+        validar_editable(estado)

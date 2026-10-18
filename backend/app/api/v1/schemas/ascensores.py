@@ -1,9 +1,10 @@
 from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from app.domain.enums import EstadoAscensor, TipoEquipo
+from app.api.v1.schemas.common import ActualizacionParcial
+from app.domain.enums import CategoriaEquipo, EstadoAscensor, TipoEquipo
 
 
 class EdificioResumen(BaseModel):
@@ -26,6 +27,7 @@ class AscensorBase(BaseModel):
     anio_instalacion: int | None = None
     pisos: int | None = None
     tipo_equipo: TipoEquipo
+    categoria: CategoriaEquipo = CategoriaEquipo.ASCENSOR
     estado: EstadoAscensor = EstadoAscensor.OPERACIONAL
     tasa_fallo: float | None = None
     manas: str | None = None
@@ -34,6 +36,21 @@ class AscensorBase(BaseModel):
 
 class AscensorCrear(AscensorBase):
     pass
+
+
+class AscensorActualizar(ActualizacionParcial):
+    """PATCH /ascensores/{id}: ficha técnica editable desde el operador."""
+
+    NO_ANULABLES = ("estado",)
+
+    estado: EstadoAscensor | None = None
+    manas: str | None = None
+    marca: str | None = None
+    modelo: str | None = None
+    pisos: int | None = Field(default=None, ge=1)
+    anio_instalacion: int | None = Field(default=None, ge=1900, le=2100)
+    torre: str | None = None
+    numero: str | None = None
 
 
 class AscensorOut(AscensorBase):

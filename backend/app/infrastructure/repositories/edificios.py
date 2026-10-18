@@ -34,3 +34,8 @@ class SqlEdificioRepository:
         await self.session.commit()
         await self.session.refresh(edificio)
         return edificio
+
+    async def guardar(self, edificio: Edificio) -> Edificio:
+        await self.session.commit()
+        await self.session.refresh(edificio)
+        return edificio

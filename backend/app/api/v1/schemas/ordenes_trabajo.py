@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.v1.schemas.common import ActualizacionParcial
 from app.domain.enums import EstadoOrdenTrabajo, PrioridadOrdenTrabajo, Semaforo, TipoOrdenTrabajo
 
 
@@ -43,6 +44,18 @@ class OrdenTrabajoCrear(BaseModel):
     pauta_id: UUID | None = None
     emergencia_id: UUID | None = None
     fecha_programada: datetime
+    descripcion: str | None = None
+
+
+class OrdenTrabajoActualizar(ActualizacionParcial):
+    """PATCH /ordenes-trabajo/{id}: reasignar técnico (null = sin asignar),
+    reprogramar, cambiar prioridad o descripción."""
+
+    NO_ANULABLES = ("fecha_programada", "prioridad")
+
+    tecnico_id: UUID | None = None
+    fecha_programada: datetime | None = None
+    prioridad: PrioridadOrdenTrabajo | None = None
     descripcion: str | None = None
 
 

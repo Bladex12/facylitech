@@ -4,8 +4,19 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.api.v1.deps import EdificioRepoDep
 from app.api.v1.schemas.common import Pagina
-from app.api.v1.schemas.edificios import Coordenadas, EdificioCrear, EdificioOut
-from app.application.use_cases.edificios import crear_edificio, listar_edificios, obtener_edificio
+from app.api.v1.schemas.edificios import (
+    Coordenadas,
+    EdificioActualizar,
+    EdificioCrear,
+    EdificioOut,
+)
+from app.application.errors import NoEncontradoError
+from app.application.use_cases.edificios import (
+    actualizar_edificio,
+    crear_edificio,
+    listar_edificios,
+    obtener_edificio,
+)
 from app.infrastructure.db.models import Edificio
 from app.infrastructure.geo import coords_desde_punto, punto_desde_coords
 
@@ -25,6 +36,9 @@ def _a_out(edificio: Edificio) -> EdificioOut:
         manas=edificio.manas,
         instrucciones_reinicio=edificio.instrucciones_reinicio,
         vencimiento_certificacion=edificio.vencimiento_certificacion,
+        contacto_nombre=edificio.contacto_nombre,
+        contacto_telefono=edificio.contacto_telefono,
+        contacto_email=edificio.contacto_email,
     )
 
 
@@ -55,3 +69,12 @@ async def crear(datos: EdificioCrear, repo: EdificioRepoDep):
     )
     creado = await crear_edificio(repo, edificio)
     return _a_out(creado)
+
+
+@router.patch("/{id_}", response_model=EdificioOut)
+async def actualizar(id_: UUID, datos: EdificioActualizar, repo: EdificioRepoDep):
+    try:
+        edificio = await actualizar_edificio(repo, id_, datos.cambios())
+    except NoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return _a_out(edificio)

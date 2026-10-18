@@ -8,6 +8,7 @@ from app.api.v1.routers import (
     edificios,
     emergencias,
     health,
+    mensajes,
     ordenes_trabajo,
     papeletas,
     pautas,
@@ -26,3 +27,4 @@ api_router.include_router(emergencias.router)
 api_router.include_router(ordenes_trabajo.router)
 api_router.include_router(papeletas.router)
 api_router.include_router(dashboard.router)
+api_router.include_router(mensajes.router)

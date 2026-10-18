@@ -35,3 +35,7 @@ class SqlUsuarioRepository:
         await self.session.commit()
         await self.session.refresh(usuario)
         return usuario
+
+    async def listar_activos(self, rol: RolUsuario) -> list[Usuario]:
+        stmt = select(Usuario).where(Usuario.rol == rol, Usuario.activo.is_(True)).order_by(Usuario.nombre)
+        return list((await self.session.execute(stmt)).scalars().all())
