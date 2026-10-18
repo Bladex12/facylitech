@@ -1,7 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.api.v1.auth import requerir_operador, usuario_actual
 from app.api.v1.deps import EdificioRepoDep
 from app.api.v1.schemas.common import Pagina
 from app.api.v1.schemas.edificios import (
@@ -20,7 +21,9 @@ from app.application.use_cases.edificios import (
 from app.infrastructure.db.models import Edificio
 from app.infrastructure.geo import coords_desde_punto, punto_desde_coords
 
-router = APIRouter(prefix="/edificios", tags=["edificios"])
+# Lectura: cualquier usuario autenticado (el técnico la necesita). Escritura: operador.
+router = APIRouter(prefix="/edificios", tags=["edificios"], dependencies=[Depends(usuario_actual)])
+_SOLO_OPERADOR = [Depends(requerir_operador)]
 
 
 def _a_out(edificio: Edificio) -> EdificioOut:
@@ -61,7 +64,7 @@ async def obtener(id_: UUID, repo: EdificioRepoDep):
     return _a_out(edificio)
 
 
-@router.post("", response_model=EdificioOut, status_code=201)
+@router.post("", response_model=EdificioOut, status_code=201, dependencies=_SOLO_OPERADOR)
 async def crear(datos: EdificioCrear, repo: EdificioRepoDep):
     edificio = Edificio(
         **datos.model_dump(exclude={"ubicacion"}),
@@ -71,7 +74,7 @@ async def crear(datos: EdificioCrear, repo: EdificioRepoDep):
     return _a_out(creado)
 
 
-@router.patch("/{id_}", response_model=EdificioOut)
+@router.patch("/{id_}", response_model=EdificioOut, dependencies=_SOLO_OPERADOR)
 async def actualizar(id_: UUID, datos: EdificioActualizar, repo: EdificioRepoDep):
     try:
         edificio = await actualizar_edificio(repo, id_, datos.cambios())

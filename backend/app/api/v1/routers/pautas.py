@@ -1,14 +1,16 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.api.v1.auth import requerir_operador, usuario_actual
 from app.api.v1.deps import PautaRepoDep
 from app.api.v1.schemas.common import Pagina
 from app.api.v1.schemas.pautas import PautaCrear, PautaOut
 from app.application.use_cases.pautas import crear_pauta, listar_pautas, obtener_pauta
 from app.infrastructure.db.models import PautaItem, PautaMantencion
 
-router = APIRouter(prefix="/pautas", tags=["pautas"])
+# Lectura: cualquier usuario autenticado. Escritura: operador.
+router = APIRouter(prefix="/pautas", tags=["pautas"], dependencies=[Depends(usuario_actual)])
 
 
 @router.get("", response_model=Pagina[PautaOut])
@@ -25,7 +27,9 @@ async def obtener(id_: UUID, repo: PautaRepoDep):
     return pauta
 
 
-@router.post("", response_model=PautaOut, status_code=201)
+@router.post(
+    "", response_model=PautaOut, status_code=201, dependencies=[Depends(requerir_operador)]
+)
 async def crear(datos: PautaCrear, repo: PautaRepoDep):
     pauta = PautaMantencion(
         nombre=datos.nombre,

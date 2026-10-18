@@ -42,6 +42,16 @@ class SqlUsuarioRepository:
         stmt = select(Usuario).where(Usuario.rol == rol, Usuario.activo.is_(True)).order_by(Usuario.nombre)
         return list((await self.session.execute(stmt)).scalars().all())
 
+    async def obtener_por_email(self, email: str) -> Usuario | None:
+        """Búsqueda sin distinguir mayúsculas (el login no debe depender de ellas)."""
+        stmt = select(Usuario).where(func.lower(Usuario.email) == email.strip().lower()).limit(1)
+        return (await self.session.execute(stmt)).scalars().first()
+
+    async def guardar_password_hash(self, usuario: Usuario, password_hash: str) -> Usuario:
+        usuario.password_hash = password_hash
+        await self.session.commit()
+        return usuario
+
     async def actualizar_ubicacion(
         self, usuario: Usuario, lat: float, lon: float, momento: datetime
     ) -> Usuario:

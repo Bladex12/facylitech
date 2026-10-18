@@ -1,7 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.api.v1.auth import requerir_operador, usuario_actual
 from app.api.v1.deps import AscensorRepoDep
 from app.api.v1.schemas.ascensores import (
     AscensorActualizar,
@@ -23,7 +24,9 @@ from app.application.use_cases.ascensores import (
 from app.domain.enums import CategoriaEquipo
 from app.infrastructure.db.models import Ascensor
 
-router = APIRouter(prefix="/ascensores", tags=["ascensores"])
+# Lectura: cualquier usuario autenticado (QR, mapa, ficha). Escritura: operador.
+router = APIRouter(prefix="/ascensores", tags=["ascensores"], dependencies=[Depends(usuario_actual)])
+_SOLO_OPERADOR = [Depends(requerir_operador)]
 
 
 @router.get("", response_model=Pagina[AscensorOut])
@@ -56,13 +59,13 @@ async def obtener(id_: UUID, repo: AscensorRepoDep):
     return ascensor
 
 
-@router.post("", response_model=AscensorOut, status_code=201)
+@router.post("", response_model=AscensorOut, status_code=201, dependencies=_SOLO_OPERADOR)
 async def crear(datos: AscensorCrear, repo: AscensorRepoDep):
     ascensor = Ascensor(**datos.model_dump())
     return await crear_ascensor(repo, ascensor)
 
 
-@router.patch("/{id_}", response_model=AscensorOut)
+@router.patch("/{id_}", response_model=AscensorOut, dependencies=_SOLO_OPERADOR)
 async def actualizar(id_: UUID, datos: AscensorActualizar, repo: AscensorRepoDep):
     try:
         return await actualizar_ascensor(repo, id_, datos.cambios())

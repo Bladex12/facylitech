@@ -21,7 +21,8 @@ class UsuarioBase(BaseModel):
 
 
 class UsuarioCrear(UsuarioBase):
-    pass
+    # Opcional: un usuario sin contraseña existe pero no puede iniciar sesión.
+    password: str | None = Field(default=None, min_length=8, max_length=200)
 
 
 class UsuarioOut(UsuarioBase):

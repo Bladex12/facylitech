@@ -1,7 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.api.v1.auth import requerir_operador
 from app.api.v1.deps import ClienteRepoDep
 from app.api.v1.schemas.administraciones import AdministracionOut
 from app.api.v1.schemas.clientes import ClienteCrear, ClienteOut
@@ -14,7 +15,7 @@ from app.application.use_cases.clientes import (
 )
 from app.infrastructure.db.models import Cliente
 
-router = APIRouter(prefix="/clientes", tags=["clientes"])
+router = APIRouter(prefix="/clientes", tags=["clientes"], dependencies=[Depends(requerir_operador)])
 
 
 @router.get("", response_model=Pagina[ClienteOut])

@@ -2,8 +2,9 @@ from collections import defaultdict
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.api.v1.auth import requerir_operador
 from app.api.v1.deps import EmergenciaRepoDep, OrdenRepoDep
 from app.api.v1.schemas.dashboard import (
     CalendarioMesOut,
@@ -17,7 +18,7 @@ from app.domain.enums import EstadoEmergencia
 from app.domain.ordenamiento import clave_orden_listado
 from app.domain.semaforo import calcular_semaforo
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+router = APIRouter(prefix="/dashboard", tags=["dashboard"], dependencies=[Depends(requerir_operador)])
 
 _TZ = ZoneInfo("America/Santiago")
 _ESTADOS_ABIERTOS = (EstadoEmergencia.ACTIVA, EstadoEmergencia.EN_ATENCION)

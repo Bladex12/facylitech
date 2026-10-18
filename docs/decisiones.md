@@ -401,3 +401,97 @@ Implementa la sección "Frontend" de `docs/contrato-auth.md`.
   (propio). Ninguna llama a clientes, administraciones, `usuarios.listar`,
   `emergencias`, `mapa` ni `tecnicos/cercanos`.
 
+## 2026-10-18 — Autenticación real y autorización por rol (backend-auth)
+
+Contrato en `docs/contrato-auth.md`. Decisiones de implementación y límites:
+
+- **Verificación en BD en cada request**: `usuario_actual` decodifica el JWT y
+  consulta el usuario (`session.get`, PK). Un usuario desactivado o eliminado
+  recibe 401 al instante aunque su token no haya expirado. También se rechaza
+  el token cuyo `rol` ya no coincide con el de la BD. Costo: 1 consulta por PK
+  por request, aceptable con ~20 usuarios (RNF-06).
+- **Sin refresh ni revocación de tokens**: un solo token (12 h operador, 24 h
+  técnico). No se puede invalidar un token concreto antes de que expire; la
+  única palanca es desactivar al usuario (efecto inmediato por el punto
+  anterior). Cambiar la contraseña **no** invalida los tokens ya emitidos.
+- **Contador anti fuerza bruta en memoria** (`infrastructure/intentos_login.py`):
+  5 fallos por correo en 15 min -> 429 con `Retry-After`. Se pierde al
+  reiniciar y no se comparte entre procesos; con varios workers el límite
+  efectivo sería 5 por worker. La política (`domain/seguridad.py::segundos_de_bloqueo`)
+  es pura. Detalles: cuenta también los correos inexistentes (no revela cuáles
+  existen); un correo bloqueado devuelve 429 aunque la clave sea correcta; un
+  login correcto reinicia el contador; mientras está bloqueado los intentos no
+  se registran (no se prolonga el bloqueo). Tope de 10 000 correos distintos en
+  memoria. No hay límite por IP (detrás de un proxy habría que confiar en
+  `X-Forwarded-For`; fuera de alcance).
+- **Igualar tiempos en el login**: si el correo no existe se verifica contra un
+  hash señuelo para que la respuesta no tarde menos (no filtra qué correos
+  existen). scrypt corre en un hilo (`asyncio.to_thread`) para no bloquear el
+  event loop.
+- **scrypt**: N=2^15, r=8, p=1, sal de 16 B, hash de 32 B, `maxmem` explícito
+  (128 MB; el default de OpenSSL de 32 MB queda justo). Al verificar se
+  rechaza cualquier hash con N > 2^17 o no potencia de 2 (un hash manipulado en
+  BD no debe poder agotar memoria). `hash_password` acepta `n` solo para tests.
+- **Secreto**: se valida al construir `Settings` (cualquier entrada que lo
+  importe, incluidos alembic y `seed.py`, falla fuera de `development` sin
+  `JWT_SECRET` de >= 32 caracteres). En desarrollo el valor por defecto es
+  público (está en el repo): jamás usarlo en un servidor accesible.
+- **Errores con `detalle` y `detail`**: el contrato dice `{"detalle": ...}`
+  "como siempre", pero FastAPI siempre respondió `{"detail": ...}` y el front lo
+  tolera (`body.detalle ?? body.detail`). Un handler global de `HTTPException`
+  ahora responde **ambas** claves con el mismo texto y conserva los headers
+  (`WWW-Authenticate`, `Retry-After`). Los 422 de validación siguen siendo el
+  formato estándar de FastAPI (lista en `detail`).
+- **`cambiar-password` con clave actual mala es 400** (no 401), según contrato:
+  el frontend cierra sesión ante cualquier 401.
+- **Autorización por router, con excepciones por endpoint**: routers solo
+  operador (`clientes`, `administraciones`, `emergencias`, `tecnicos`, `mapa`,
+  `dashboard`) llevan `dependencies=[Depends(requerir_operador)]`; los de
+  lectura compartida (`edificios`, `ascensores`, `pautas`) exigen sesión a nivel
+  de router y operador en POST/PATCH. `papeletas` se autoriza completo por la OT
+  de la papeleta (dependencia a nivel de router). Un test
+  (`test_la_matriz_cubre_todos_los_endpoints_de_la_api`) falla si se agrega una
+  ruta que no esté clasificada en la matriz de `tests/test_autorizacion.py`.
+- **Orden de los errores**: sin token 401 > sin permiso 403 > recurso inexistente
+  404 > validación 422. Para un técnico, pedir una OT/papeleta inexistente da
+  404 y una ajena 403 (se puede deducir que un id existe; son UUID y la
+  enumeración no es viable). Un `usuario_id` ajeno es 403 **antes** de buscar al
+  usuario, por lo que un id inexistente también es 403 (antes 404): afecta a
+  `/mensajes/*` y `POST /usuarios/{id}/ubicacion`.
+- **`POST /usuarios/{id}/ubicacion` es solo del propio usuario, también para el
+  operador** (el contrato dice "solo el propio"). El operador no puede corregir
+  a mano la ubicación de un técnico.
+- **`operador_id` de despachar** debe ser el del token; por eso ya no es
+  alcanzable el 422 "operador_id no es operador" desde la API (un id ajeno da
+  403). El caso de uso conserva la validación.
+- **`GET /ordenes-trabajo` y `GET /asignaciones` para técnico**: sin filtro se
+  fuerza el propio; con `tecnico_id` ajeno es 403 (no se filtra en silencio).
+- **`/media/*` público** (límite conocido, ya en el contrato): `<img>` no envía
+  headers y las rutas llevan dos UUID v4. Quien tenga la URL ve la foto, sin
+  sesión y aunque el usuario ya no exista. Con Supabase Storage el bucket es
+  público por la misma razón. Mitigación futura: URLs firmadas con expiración.
+- **`/health` público** (lo usan los healthchecks); revela solo estado y versión de PostGIS.
+- **Lecturas compartidas con el técnico**: `GET /ascensores/{id}/bitacora` y los
+  listados de edificios/ascensores/pautas son visibles para cualquier técnico
+  (el contrato los marca "GET: sí"). La bitácora incluye nombres de otros
+  técnicos y el trabajo realizado; no hay datos financieros.
+- **RNF-05 (nada financiero para el técnico)**: hoy ningún modelo, schema ni
+  serializer de OT, papeleta, equipo o edificio tiene costos, precios ni
+  tarifas, así que no hay nada que ocultar.
+  `test_las_respuestas_de_ot_y_papeleta_no_exponen_datos_financieros` falla si
+  alguien agrega un campo con esos nombres; cuando exista información
+  financiera hará falta un schema de salida distinto por rol.
+- **Mensajería**: solo se valida que `usuario_id`/`remitente_id` sean el propio.
+  Se puede ligar un mensaje a cualquier `orden_trabajo_id` (solo guarda la
+  referencia, no expone la OT). No se restringió con quién puede escribir un
+  técnico más allá de lo que ya valida el caso de uso.
+- **Tests**: el fixture `client` queda autenticado como un operador de prueba
+  (`operador_prueba`, creado en la BD de la transacción). Se agregan
+  `cliente_anonimo`, `cliente_como(id, rol)` y el context manager
+  `como(client, usuario)`. `crear_operador` ahora deja al `client` autenticado
+  como el operador creado (despachar exige que `operador_id` sea el del token) y
+  `crear_tecnico(activo=False)` desactiva al técnico al final (un inactivo no
+  puede autenticarse, y la ubicación la registra el propio técnico).
+  Aserciones modificadas por el contrato (404/422 -> 403): ubicación de id
+  inexistente, conversaciones de un `usuario_id` inexistente y `operador_id`
+  que no es operador.

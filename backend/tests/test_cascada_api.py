@@ -9,6 +9,7 @@ from tests.fabricas import (
     COSTANERA_CENTER,
     ESTACION_CENTRAL,
     MAIPU,
+    como,
     crear_ascensor,
     crear_edificio,
     crear_emergencia,
@@ -42,6 +43,19 @@ async def _despachar(client, esc, tecnicos=None):
         f"/api/v1/emergencias/{esc['emergencia']['id']}/despachar",
         json={"tecnico_ids": [t["id"] for t in tecnicos], "operador_id": esc["operador"]["id"]},
     )
+
+
+async def _responder(client, esc, asignacion_id, accion, **kwargs):
+    """Aceptar/rechazar solo lo puede hacer el técnico dueño de la asignación: se
+    busca de quién es y se actúa autenticado como él."""
+    dueno = esc["tecnicos"][0]
+    for t in esc["tecnicos"]:
+        r = await client.get("/api/v1/asignaciones", params={"tecnico_id": t["id"], "estado": "todas"})
+        if any(a["id"] == asignacion_id for a in r.json()):
+            dueno = t
+            break
+    with como(client, dueno):
+        return await client.post(f"/api/v1/asignaciones/{asignacion_id}/{accion}", **kwargs)
 
 
 async def _retroceder_notificacion(db_session, asignacion_id: str, minutos: int):
@@ -113,7 +127,9 @@ async def test_despachar_valida_entrada(client):
         f"/api/v1/emergencias/{esc['emergencia']['id']}/despachar",
         json={"tecnico_ids": [esc["tecnicos"][0]["id"]], "operador_id": esc["tecnicos"][1]["id"]},
     )
-    assert r.status_code == 422  # operador_id no es operador
+    # operador_id debe ser el del token (contrato de autenticación): un id ajeno es 403
+    # y ya no llega a la validación de rol (422) del caso de uso.
+    assert r.status_code == 403
     r = await client.post(
         "/api/v1/emergencias/00000000-0000-0000-0000-000000000000/despachar",
         json={"tecnico_ids": [esc["tecnicos"][0]["id"]], "operador_id": esc["operador"]["id"]},
@@ -126,8 +142,7 @@ async def test_rechazo_avanza_y_cascada_agotada_y_re_despacho(client):
     esc = await _escenario(client)
     asignaciones = (await _despachar(client, esc, esc["tecnicos"][:2])).json()["asignaciones"]
 
-    r = await client.post(
-        f"/api/v1/asignaciones/{asignaciones[0]['id']}/rechazar", json={"motivo": "Sin batería"}
+    r = await _responder(client, esc, asignaciones[0]['id'], "rechazar", json={"motivo": "Sin batería"}
     )
     assert r.status_code == 200
     assert r.json()["estado"] == "rechazada"
@@ -138,13 +153,13 @@ async def test_rechazo_avanza_y_cascada_agotada_y_re_despacho(client):
     assert em["cascada_agotada"] is False
 
     # Rechazar sin body también vale.
-    r = await client.post(f"/api/v1/asignaciones/{asignaciones[1]['id']}/rechazar")
+    r = await _responder(client, esc, asignaciones[1]['id'], "rechazar")
     assert r.status_code == 200
     em = (await client.get(f"/api/v1/emergencias/{esc['emergencia']['id']}")).json()
     assert em["cascada_agotada"] is True
 
     # Rechazar de nuevo -> 409
-    r = await client.post(f"/api/v1/asignaciones/{asignaciones[1]['id']}/rechazar")
+    r = await _responder(client, esc, asignaciones[1]['id'], "rechazar")
     assert r.status_code == 409
 
     # Re-despacho: nueva cascada a continuación de la anterior.
@@ -180,7 +195,7 @@ async def test_expiracion_perezosa(client, db_session):
     assert datetime.now(UTC) - notificada > timedelta(minutes=1)
 
     # Aceptar la expirada -> 409; la lista del técnico 1 ya no la muestra.
-    r = await client.post(f"/api/v1/asignaciones/{asignaciones[0]['id']}/aceptar")
+    r = await _responder(client, esc, asignaciones[0]['id'], "aceptar")
     assert r.status_code == 409
     r = await client.get("/api/v1/asignaciones", params={"tecnico_id": esc["tecnicos"][0]["id"]})
     assert r.json() == []
@@ -193,7 +208,7 @@ async def test_aceptar_crea_ot_y_cancela_al_resto(client):
     esc = await _escenario(client)
     asignaciones = (await _despachar(client, esc)).json()["asignaciones"]
 
-    r = await client.post(f"/api/v1/asignaciones/{asignaciones[0]['id']}/aceptar")
+    r = await _responder(client, esc, asignaciones[0]['id'], "aceptar")
     assert r.status_code == 200, r.text
     assert r.json()["estado"] == "aceptada"
     assert r.json()["expira_at"] is None
@@ -217,7 +232,7 @@ async def test_aceptar_crea_ot_y_cancela_al_resto(client):
 
     # Ya hay un técnico que aceptó: no se puede re-despachar ni aceptar otra.
     assert (await _despachar(client, esc)).status_code == 409
-    r = await client.post(f"/api/v1/asignaciones/{asignaciones[1]['id']}/aceptar")
+    r = await _responder(client, esc, asignaciones[1]['id'], "aceptar")
     assert r.status_code == 409
 
 
@@ -225,7 +240,7 @@ async def test_aceptar_crea_ot_y_cancela_al_resto(client):
 async def test_aceptar_usa_el_ascensor_de_la_emergencia(client):
     esc = await _escenario(client, ascensor_en_emergencia=True)
     asignaciones = (await _despachar(client, esc)).json()["asignaciones"]
-    await client.post(f"/api/v1/asignaciones/{asignaciones[0]['id']}/aceptar")
+    await _responder(client, esc, asignaciones[0]['id'], "aceptar")
     em = (await client.get(f"/api/v1/emergencias/{esc['emergencia']['id']}")).json()
     orden = (await client.get(f"/api/v1/ordenes-trabajo/{em['orden_trabajo_id']}")).json()
     assert orden["ascensor"]["id"] == esc["ascensor"]["id"]
@@ -235,7 +250,7 @@ async def test_aceptar_usa_el_ascensor_de_la_emergencia(client):
 async def test_aceptar_en_edificio_sin_equipos_es_409(client):
     esc = await _escenario(client, con_ascensor=False)
     asignaciones = (await _despachar(client, esc)).json()["asignaciones"]
-    r = await client.post(f"/api/v1/asignaciones/{asignaciones[0]['id']}/aceptar")
+    r = await _responder(client, esc, asignaciones[0]['id'], "aceptar")
     assert r.status_code == 409
     em = (await client.get(f"/api/v1/emergencias/{esc['emergencia']['id']}")).json()
     assert em["asignaciones"][0]["estado"] == "pendiente"  # nada quedó a medias
@@ -245,7 +260,7 @@ async def test_aceptar_en_edificio_sin_equipos_es_409(client):
 async def test_cerrar_emergencia_cancela_asignaciones_abiertas(client):
     esc = await _escenario(client)
     asignaciones = (await _despachar(client, esc)).json()["asignaciones"]
-    await client.post(f"/api/v1/asignaciones/{asignaciones[0]['id']}/rechazar")
+    await _responder(client, esc, asignaciones[0]['id'], "rechazar")
 
     r = await client.patch(
         f"/api/v1/emergencias/{esc['emergencia']['id']}/estado", json={"estado": "cerrada"}
@@ -256,15 +271,17 @@ async def test_cerrar_emergencia_cancela_asignaciones_abiertas(client):
     assert em["cascada_agotada"] is False  # cerrada: no hay nada que re-despachar
 
     assert (await _despachar(client, esc)).status_code == 409
-    r = await client.post(f"/api/v1/asignaciones/{asignaciones[1]['id']}/aceptar")
+    r = await _responder(client, esc, asignaciones[1]['id'], "aceptar")
     assert r.status_code == 409
 
 
 @pytest.mark.asyncio
 async def test_asignacion_inexistente_404(client):
-    r = await client.post("/api/v1/asignaciones/00000000-0000-0000-0000-000000000000/aceptar")
+    esc = await _escenario(client)
+    inexistente = "00000000-0000-0000-0000-000000000000"
+    r = await _responder(client, esc, inexistente, "aceptar")
     assert r.status_code == 404
-    r = await client.post("/api/v1/asignaciones/00000000-0000-0000-0000-000000000000/rechazar")
+    r = await _responder(client, esc, inexistente, "rechazar")
     assert r.status_code == 404
 
 
@@ -272,7 +289,7 @@ async def test_asignacion_inexistente_404(client):
 async def test_completar_ot_de_emergencia_cierra_y_libera_al_tecnico(client):
     esc = await _escenario(client)
     asignaciones = (await _despachar(client, esc)).json()["asignaciones"]
-    await client.post(f"/api/v1/asignaciones/{asignaciones[0]['id']}/aceptar")
+    await _responder(client, esc, asignaciones[0]['id'], "aceptar")
     em = (await client.get(f"/api/v1/emergencias/{esc['emergencia']['id']}")).json()
     ot_id = em["orden_trabajo_id"]
 

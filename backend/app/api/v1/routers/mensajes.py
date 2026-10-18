@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Response
 
+from app.api.v1.auth import UsuarioActualDep, exigir_propio
 from app.api.v1.deps import MensajeRepoDep, OrdenRepoDep, UsuarioRepoDep
 from app.api.v1.schemas.mensajes import (
     Contraparte,
@@ -25,7 +26,10 @@ router = APIRouter(prefix="/mensajes", tags=["mensajes"])
 
 
 @router.get("/conversaciones", response_model=list[ConversacionOut])
-async def conversaciones(usuario_id: UUID, repo: MensajeRepoDep, usuario_repo: UsuarioRepoDep):
+async def conversaciones(
+    usuario_id: UUID, repo: MensajeRepoDep, usuario_repo: UsuarioRepoDep, actual: UsuarioActualDep
+):
+    exigir_propio(actual, usuario_id)
     try:
         convs = await listar_conversaciones(repo, usuario_repo, usuario_id)
     except NoEncontradoError as exc:
@@ -42,8 +46,13 @@ async def conversaciones(usuario_id: UUID, repo: MensajeRepoDep, usuario_repo: U
 
 @router.get("/hilo", response_model=list[MensajeOut])
 async def hilo(
-    usuario_id: UUID, contraparte_id: UUID, repo: MensajeRepoDep, usuario_repo: UsuarioRepoDep
+    usuario_id: UUID,
+    contraparte_id: UUID,
+    repo: MensajeRepoDep,
+    usuario_repo: UsuarioRepoDep,
+    actual: UsuarioActualDep,
 ):
+    exigir_propio(actual, usuario_id)
     try:
         return await obtener_hilo(repo, usuario_repo, usuario_id, contraparte_id)
     except NoEncontradoError as exc:
@@ -52,8 +61,13 @@ async def hilo(
 
 @router.post("", response_model=MensajeOut, status_code=201)
 async def enviar(
-    datos: MensajeCrear, repo: MensajeRepoDep, usuario_repo: UsuarioRepoDep, orden_repo: OrdenRepoDep
+    datos: MensajeCrear,
+    repo: MensajeRepoDep,
+    usuario_repo: UsuarioRepoDep,
+    orden_repo: OrdenRepoDep,
+    actual: UsuarioActualDep,
 ):
+    exigir_propio(actual, datos.remitente_id, "otro remitente")
     try:
         return await enviar_mensaje(
             repo,
@@ -71,6 +85,7 @@ async def enviar(
 
 
 @router.post("/leer", status_code=204)
-async def leer(datos: MarcarLeidos, repo: MensajeRepoDep):
+async def leer(datos: MarcarLeidos, repo: MensajeRepoDep, actual: UsuarioActualDep):
+    exigir_propio(actual, datos.usuario_id)
     await marcar_leidos(repo, datos.usuario_id, datos.contraparte_id)
     return Response(status_code=204)

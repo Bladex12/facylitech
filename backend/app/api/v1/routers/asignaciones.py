@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 
+from app.api.v1.auth import AsignacionPropiaDep, UsuarioActualDep, es_operador, exigir_propio
 from app.api.v1.deps import AsignacionRepoDep, OrdenRepoDep, TiempoRespuestaDep
 from app.api.v1.schemas.emergencias import (
     AsignacionEmergenciaOut,
@@ -27,10 +28,16 @@ router = APIRouter(prefix="/asignaciones", tags=["asignaciones"])
 async def listar(
     repo: AsignacionRepoDep,
     tiempo_respuesta: TiempoRespuestaDep,
+    actual: UsuarioActualDep,
     tecnico_id: UUID | None = None,
     estado: EstadoAsignacion | Literal["todas"] = EstadoAsignacion.PENDIENTE,
 ):
-    """Asignaciones del técnico (por defecto solo las `pendiente`; `estado=todas` devuelve todas)."""
+    """Asignaciones del técnico (por defecto solo las `pendiente`; `estado=todas` devuelve todas).
+    Técnico: solo las propias (otro `tecnico_id` -> 403; sin filtro se fuerza el propio)."""
+    if not es_operador(actual):
+        if tecnico_id is not None:
+            exigir_propio(actual, tecnico_id, "otro técnico")
+        tecnico_id = actual.id
     asignaciones = await listar_asignaciones(
         repo,
         tecnico_id,
@@ -43,7 +50,11 @@ async def listar(
 
 @router.post("/{id_}/aceptar", response_model=AsignacionEmergenciaOut)
 async def aceptar(
-    id_: UUID, repo: AsignacionRepoDep, orden_repo: OrdenRepoDep, tiempo_respuesta: TiempoRespuestaDep
+    id_: UUID,
+    repo: AsignacionRepoDep,
+    orden_repo: OrdenRepoDep,
+    tiempo_respuesta: TiempoRespuestaDep,
+    _propia: AsignacionPropiaDep,
 ):
     """Acepta la emergencia: cancela al resto de la cascada, crea la OT de
     emergencia (crítica) y deja al técnico `en_terreno`. 409 si ya no está pendiente."""
@@ -63,6 +74,7 @@ async def rechazar(
     id_: UUID,
     repo: AsignacionRepoDep,
     tiempo_respuesta: TiempoRespuestaDep,
+    _propia: AsignacionPropiaDep,
     datos: RechazarAsignacion | None = None,
 ):
     try:

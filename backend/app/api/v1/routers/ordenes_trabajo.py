@@ -1,8 +1,15 @@
 from datetime import UTC, date, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.api.v1.auth import (
+    OrdenAccesibleDep,
+    UsuarioActualDep,
+    es_operador,
+    exigir_propio,
+    requerir_operador,
+)
 from app.api.v1.deps import OrdenRepoDep, PapeletaRepoDep, UsuarioRepoDep
 from app.api.v1.schemas.common import Pagina
 from app.api.v1.schemas.ordenes_trabajo import (
@@ -28,11 +35,13 @@ from app.domain.transiciones import TransicionInvalidaError
 from app.infrastructure.db.models import OrdenTrabajo
 
 router = APIRouter(prefix="/ordenes-trabajo", tags=["ordenes-trabajo"])
+_SOLO_OPERADOR = [Depends(requerir_operador)]
 
 
 @router.get("", response_model=Pagina[OrdenTrabajoOut])
 async def listar(
     repo: OrdenRepoDep,
+    actual: UsuarioActualDep,
     limit: int = Query(20, ge=1, le=100),
     offset: int = 0,
     desde: date | None = None,
@@ -42,6 +51,11 @@ async def listar(
     tipo: TipoOrdenTrabajo | None = None,
     edificio_id: UUID | None = None,
 ):
+    if not es_operador(actual):
+        # El técnico solo ve sus órdenes: si pide las de otro -> 403; si no filtra, se fuerza el propio.
+        if tecnico_id is not None:
+            exigir_propio(actual, tecnico_id, "otro técnico")
+        tecnico_id = actual.id
     items, total = await listar_ordenes(
         repo, limit, offset, desde, hasta, tecnico_id, estado, tipo, edificio_id
     )
@@ -55,7 +69,7 @@ async def listar(
 
 
 @router.get("/{id_}", response_model=OrdenTrabajoOut)
-async def obtener(id_: UUID, repo: OrdenRepoDep):
+async def obtener(id_: UUID, repo: OrdenRepoDep, _acceso: OrdenAccesibleDep):
     try:
         orden = await obtener_orden(repo, id_)
     except NoEncontradoError as exc:
@@ -63,7 +77,7 @@ async def obtener(id_: UUID, repo: OrdenRepoDep):
     return construir_orden_out(orden, datetime.now(UTC))
 
 
-@router.post("", response_model=OrdenTrabajoOut, status_code=201)
+@router.post("", response_model=OrdenTrabajoOut, status_code=201, dependencies=_SOLO_OPERADOR)
 async def crear(datos: OrdenTrabajoCrear, repo: OrdenRepoDep):
     orden = OrdenTrabajo(
         tipo=datos.tipo,
@@ -80,7 +94,7 @@ async def crear(datos: OrdenTrabajoCrear, repo: OrdenRepoDep):
     return construir_orden_out(creada, datetime.now(UTC))
 
 
-@router.patch("/{id_}", response_model=OrdenTrabajoOut)
+@router.patch("/{id_}", response_model=OrdenTrabajoOut, dependencies=_SOLO_OPERADOR)
 async def actualizar(
     id_: UUID, datos: OrdenTrabajoActualizar, repo: OrdenRepoDep, usuario_repo: UsuarioRepoDep
 ):
@@ -95,7 +109,7 @@ async def actualizar(
     return construir_orden_out(orden, datetime.now(UTC))
 
 
-@router.post("/{id_}/cancelar", response_model=OrdenTrabajoOut)
+@router.post("/{id_}/cancelar", response_model=OrdenTrabajoOut, dependencies=_SOLO_OPERADOR)
 async def cancelar(id_: UUID, repo: OrdenRepoDep):
     try:
         orden = await cancelar_orden(repo, id_)
@@ -107,7 +121,7 @@ async def cancelar(id_: UUID, repo: OrdenRepoDep):
 
 
 @router.post("/{id_}/iniciar", response_model=OrdenTrabajoOut)
-async def iniciar(id_: UUID, repo: OrdenRepoDep):
+async def iniciar(id_: UUID, repo: OrdenRepoDep, _acceso: OrdenAccesibleDep):
     try:
         orden = await iniciar_orden(repo, id_)
     except NoEncontradoError as exc:
@@ -118,7 +132,7 @@ async def iniciar(id_: UUID, repo: OrdenRepoDep):
 
 
 @router.post("/{id_}/completar", response_model=OrdenTrabajoOut)
-async def completar(id_: UUID, repo: OrdenRepoDep):
+async def completar(id_: UUID, repo: OrdenRepoDep, _acceso: OrdenAccesibleDep):
     try:
         orden = await completar_orden(repo, id_)
     except NoEncontradoError as exc:
@@ -129,7 +143,9 @@ async def completar(id_: UUID, repo: OrdenRepoDep):
 
 
 @router.post("/{id_}/papeleta", response_model=PapeletaOut, status_code=201)
-async def crear_papeleta(id_: UUID, orden_repo: OrdenRepoDep, papeleta_repo: PapeletaRepoDep):
+async def crear_papeleta(
+    id_: UUID, orden_repo: OrdenRepoDep, papeleta_repo: PapeletaRepoDep, _acceso: OrdenAccesibleDep
+):
     try:
         orden = await obtener_orden(orden_repo, id_)
     except NoEncontradoError as exc:

@@ -45,7 +45,7 @@ def test_ignora_mensajes_de_terceros():
     assert resumir_conversaciones(yo, [_m(a, b, 1)]) == []
 
 
-async def test_enviar_mensaje_con_orden_inexistente_da_404(client, db_session):
+async def test_enviar_mensaje_con_orden_inexistente_da_404(cliente_como, db_session):
     import uuid as _uuid
 
     from app.infrastructure.db.models import Usuario
@@ -54,6 +54,7 @@ async def test_enviar_mensaje_con_orden_inexistente_da_404(client, db_session):
     b = Usuario(nombre="Tec", email=f"tec-{_uuid.uuid4()}@x.cl", rol="tecnico")
     db_session.add_all([a, b])
     await db_session.flush()
+    client = cliente_como(a.id, "operador")  # el remitente debe ser el usuario autenticado
     resp = await client.post(
         "/api/v1/mensajes",
         json={

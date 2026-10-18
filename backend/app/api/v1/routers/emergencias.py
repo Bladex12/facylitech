@@ -1,8 +1,9 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.api.v1.auth import OperadorDep, exigir_propio, requerir_operador
 from app.api.v1.deps import (
     AsignacionRepoDep,
     EmergenciaRepoDep,
@@ -35,7 +36,9 @@ from app.domain.cascada import CascadaError
 from app.domain.enums import EstadoEmergencia
 from app.infrastructure.db.models import Emergencia
 
-router = APIRouter(prefix="/emergencias", tags=["emergencias"])
+router = APIRouter(
+    prefix="/emergencias", tags=["emergencias"], dependencies=[Depends(requerir_operador)]
+)
 
 
 @router.get("", response_model=Pagina[EmergenciaOut])
@@ -129,9 +132,12 @@ async def despachar(
     tecnico_repo: TecnicoRepoDep,
     usuario_repo: UsuarioRepoDep,
     tiempo_respuesta: TiempoRespuestaDep,
+    operador: OperadorDep,
 ):
     """El operador aprueba la cascada: el primer técnico queda `pendiente`, el
-    resto `en_espera`. Re-despachar cancela las asignaciones abiertas previas."""
+    resto `en_espera`. Re-despachar cancela las asignaciones abiertas previas.
+    `operador_id` del cuerpo debe ser el del token (403 si no)."""
+    exigir_propio(operador, datos.operador_id, "otro operador")
     try:
         emergencia = await despachar_emergencia(
             repo,

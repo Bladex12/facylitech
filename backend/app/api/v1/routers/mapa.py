@@ -1,14 +1,15 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.v1.auth import requerir_operador
 from app.api.v1.deps import MapaRepoDep
 from app.api.v1.schemas.mapa import MapaData
 from app.api.v1.serializers import construir_mapa_out
 from app.application.use_cases.mapa import obtener_datos_mapa
 from app.infrastructure.config import settings
 
-router = APIRouter(prefix="/mapa", tags=["mapa"])
+router = APIRouter(prefix="/mapa", tags=["mapa"], dependencies=[Depends(requerir_operador)])
 
 
 @router.get("", response_model=MapaData)

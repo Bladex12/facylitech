@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from app.infrastructure.db.models import Usuario
 from app.infrastructure.geo import punto_desde_coords
+from tests.fabricas import como, desactivar_usuario, headers_de
 from tests.test_ordenes_trabajo_api import _crear_administracion, _crear_edificio
 
 
@@ -276,11 +277,13 @@ async def test_cancelar_orden_en_curso_ok(client):
 
 
 @pytest.mark.asyncio
-async def test_mensajeria_flujo_completo(client):
+async def test_mensajeria_flujo_completo(client, operador_prueba):
     op = await _crear_usuario(client, "Operador Central", "op@x.cl", "operador")
     t1 = await _crear_usuario(client, "Ana Técnica", "t1@x.cl", "tecnico")
     t2 = await _crear_usuario(client, "Beto Técnico", "t2@x.cl", "tecnico")
     await _crear_usuario(client, "Inactivo", "t3@x.cl", "tecnico", activo=False)
+    client.headers.update(headers_de(op["id"], "operador"))  # los mensajes se piden como `usuario_id`
+    await desactivar_usuario(operador_prueba.id)  # el test asume un único operador activo
 
     # Operador sin mensajes ve igual a todos los técnicos activos
     r = await client.get("/api/v1/mensajes/conversaciones", params={"usuario_id": op["id"]})
@@ -302,16 +305,17 @@ async def test_mensajeria_flujo_completo(client):
     assert m1["leido_at"] is None
     assert m1["orden_trabajo_id"] is None
 
-    r = await client.post(
-        "/api/v1/mensajes",
-        json={"remitente_id": t2["id"], "destinatario_id": op["id"], "texto": "Sí, partiendo"},
-    )
-    assert r.status_code == 201
-    r = await client.post(
-        "/api/v1/mensajes",
-        json={"remitente_id": t2["id"], "destinatario_id": op["id"], "texto": "Equipo 2 detenido"},
-    )
-    assert r.status_code == 201
+    with como(client, t2):
+        r = await client.post(
+            "/api/v1/mensajes",
+            json={"remitente_id": t2["id"], "destinatario_id": op["id"], "texto": "Sí, partiendo"},
+        )
+        assert r.status_code == 201
+        r = await client.post(
+            "/api/v1/mensajes",
+            json={"remitente_id": t2["id"], "destinatario_id": op["id"], "texto": "Equipo 2 detenido"},
+        )
+        assert r.status_code == 201
 
     # Conversaciones del operador: Beto primero (último mensaje), 2 no leídos
     convs = (await client.get("/api/v1/mensajes/conversaciones", params={"usuario_id": op["id"]})).json()
@@ -320,7 +324,10 @@ async def test_mensajeria_flujo_completo(client):
     assert convs[0]["ultimo_mensaje"]["texto"] == "Equipo 2 detenido"
 
     # Técnico ve al operador
-    convs_t = (await client.get("/api/v1/mensajes/conversaciones", params={"usuario_id": t1["id"]})).json()
+    with como(client, t1):
+        convs_t = (
+            await client.get("/api/v1/mensajes/conversaciones", params={"usuario_id": t1["id"]})
+        ).json()
     assert [c["contraparte"]["id"] for c in convs_t] == [op["id"]]
 
     # Hilo ascendente
@@ -351,6 +358,7 @@ async def test_mensajeria_flujo_completo(client):
 async def test_mensaje_validaciones(client):
     op = await _crear_usuario(client, "Op", "op@x.cl", "operador")
     t1 = await _crear_usuario(client, "T1", "t1@x.cl", "tecnico")
+    client.headers.update(headers_de(op["id"], "operador"))
 
     r = await client.post(
         "/api/v1/mensajes", json={"remitente_id": op["id"], "destinatario_id": t1["id"], "texto": "   "}
@@ -369,10 +377,11 @@ async def test_mensaje_validaciones(client):
         },
     )
     assert r.status_code == 404
+    # Un usuario_id que no es el del token (aunque no exista) es 403, no 404.
     r = await client.get(
         "/api/v1/mensajes/conversaciones", params={"usuario_id": "00000000-0000-0000-0000-000000000000"}
     )
-    assert r.status_code == 404
+    assert r.status_code == 403
 
 
 @pytest.mark.asyncio
@@ -382,14 +391,15 @@ async def test_mensaje_ligado_a_orden(client):
     op = await _crear_usuario(client, "Op", "op@x.cl", "operador")
     t1 = await _crear_usuario(client, "T1", "t1@x.cl", "tecnico")
     orden = await _crear_orden(client, asc["id"], t1["id"])
-    r = await client.post(
-        "/api/v1/mensajes",
-        json={
-            "remitente_id": t1["id"],
-            "destinatario_id": op["id"],
-            "texto": "Falta repuesto",
-            "orden_trabajo_id": orden["id"],
-        },
-    )
+    with como(client, t1):
+        r = await client.post(
+            "/api/v1/mensajes",
+            json={
+                "remitente_id": t1["id"],
+                "destinatario_id": op["id"],
+                "texto": "Falta repuesto",
+                "orden_trabajo_id": orden["id"],
+            },
+        )
     assert r.status_code == 201
     assert r.json()["orden_trabajo_id"] == orden["id"]
