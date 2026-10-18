@@ -48,12 +48,14 @@ español: `edificio`, `ascensor`, `orden_trabajo`, `papeleta`.
 de evidencia (local en dev, Supabase Storage configurable), mapa Leaflet +
 OSM, lector QR, cercanía PostGIS/Haversine y despacho en cascada aprobado por
 el operador, mensajería simple REST + polling. Contrato en
-`docs/contrato-api-octubre.md`.
+`docs/contrato-api-octubre.md`. **Autenticación real** (login con correo +
+contraseña, JWT, autorización por rol en el backend) pedida por el usuario el
+18-oct: contrato en `docs/contrato-auth.md`.
 
 **Deliberadamente fuera de alcance por ahora** (no agregar sin que el usuario
 lo pida): tracking GPS continuo (la Gantt lo pone el 26-oct, por eventos de
 botones), WebSockets, CQRS, BD intercambiable, microservicios, event
-sourcing, autenticación real (JWT).
+sourcing, recuperación de contraseña por correo, SSO/OAuth.
 
 ## Comandos
 
@@ -163,7 +165,7 @@ Puntos clave de esta arquitectura:
 ```
 frontend/src/
 ├── api/          # client.ts (fetch wrapper), endpoints.ts, types.ts (DTOs)
-├── auth/          # AuthContext (usuario en localStorage) + SelectorUsuario (auth de dev)
+├── auth/          # AuthContext (sesión JWT) + pantalla de login
 ├── domain/        # semaforo.ts (colores), ordenamiento.ts, fechas.ts — espejo del backend
 ├── components/    # compartidos: mapa/ (Leaflet), mensajes/, operador/, EstadosCarga
 └── routes/
@@ -174,10 +176,9 @@ frontend/src/
 ```
 
 - Dos árboles de rutas bajo un solo proyecto Vite: `/operador/*` y `/tecnico/*`.
-- **Auth de desarrollo**: `useAuth()` (`src/auth/AuthContext.tsx`) guarda el
-  usuario elegido en `localStorage`; no hay JWT. `RequireOperador`/
-  `RequireTecnico` en `App.tsx` redirigen según rol. Diseñado para
-  reemplazarse por auth real sin tocar el resto de la app.
+- **Auth**: ver `docs/contrato-auth.md`. `useAuth()` (`src/auth/AuthContext.tsx`)
+  guarda la sesión (token + usuario); `api/client.ts` envía el Bearer;
+  `RequireOperador`/`RequireTecnico` en `App.tsx` redirigen a `/login` o según rol.
 - Todas las secciones del menú están construidas; `<Proximamente />` queda
   disponible para futuras secciones.
 - El semáforo del backend (`completado|vencido|en_curso|programado`) mapea a
