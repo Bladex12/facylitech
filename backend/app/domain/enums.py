@@ -9,6 +9,9 @@ class RolUsuario(StrEnum):
 class TipoCliente(StrEnum):
     COMUNIDAD = "comunidad"
     FONDO_INVERSION = "fondo_inversion"
+    ADMINISTRACION = "administracion"
+    CORPORATIVO = "corporativo"
+    PUBLICO = "publico"
     OTRO = "otro"
 
 
@@ -18,12 +21,21 @@ class TipoEdificio(StrEnum):
     OFICINA = "oficina"
     HOTEL = "hotel"
     INDUSTRIAL = "industrial"
+    PUBLICO = "publico"
 
 
 class TipoEquipo(StrEnum):
     ELECTROMECANICO = "electromecanico"
     HIDRAULICO = "hidraulico"
     ELECTROHIDRAULICO = "electrohidraulico"
+
+
+class CategoriaEquipo(StrEnum):
+    """Clase de equipo según la empresa: ascensor, montacarga o montaplatos."""
+
+    ASCENSOR = "ascensor"
+    MONTACARGA = "montacarga"
+    MONTAPLATOS = "montaplatos"
 
 
 class EstadoAscensor(StrEnum):

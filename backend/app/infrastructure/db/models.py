@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -18,6 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.domain.enums import (
+    CategoriaEquipo,
     EstadoAscensor,
     EstadoDisponibilidadTecnico,
     EstadoEmergencia,
@@ -85,6 +87,9 @@ class Edificio(Base):
     manas: Mapped[str | None] = mapped_column(Text)
     instrucciones_reinicio: Mapped[str | None] = mapped_column(Text)
     vencimiento_certificacion: Mapped[date | None] = mapped_column(Date)
+    contacto_nombre: Mapped[str | None] = mapped_column(String(200))
+    contacto_telefono: Mapped[str | None] = mapped_column(String(50))
+    contacto_email: Mapped[str | None] = mapped_column(String(255))
 
     administracion: Mapped["Administracion"] = relationship(back_populates="edificios")
     ascensores: Mapped[list["Ascensor"]] = relationship(
@@ -112,6 +117,9 @@ class Ascensor(Base):
     anio_instalacion: Mapped[int | None] = mapped_column(Integer)
     pisos: Mapped[int | None] = mapped_column(Integer)
     tipo_equipo: Mapped[TipoEquipo] = mapped_column(String(20), nullable=False)
+    categoria: Mapped[CategoriaEquipo] = mapped_column(
+        String(20), nullable=False, default=CategoriaEquipo.ASCENSOR, server_default="ascensor"
+    )
     estado: Mapped[EstadoAscensor] = mapped_column(
         String(20), nullable=False, default=EstadoAscensor.OPERACIONAL
     )
@@ -130,6 +138,7 @@ class Usuario(Base):
     nombre: Mapped[str] = mapped_column(String(200), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     rol: Mapped[RolUsuario] = mapped_column(String(20), nullable=False)
+    rut: Mapped[str | None] = mapped_column(String(12))
     telefono: Mapped[str | None] = mapped_column(String(50))
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     zona: Mapped[str | None] = mapped_column(String(100))
@@ -317,3 +326,29 @@ class Evidencia(Base):
     )
 
     papeleta: Mapped["Papeleta"] = relationship(back_populates="evidencias")
+
+
+class Mensaje(Base):
+    """Mensajería simple operador <-> técnico (REST + polling, sin WebSockets)."""
+
+    __tablename__ = "mensaje"
+    __table_args__ = (Index("ix_mensaje_destinatario_leido", "destinatario_id", "leido_at"),)
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    remitente_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("usuario.id", ondelete="CASCADE"), nullable=False
+    )
+    destinatario_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("usuario.id", ondelete="CASCADE"), nullable=False
+    )
+    orden_trabajo_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("orden_trabajo.id", ondelete="SET NULL")
+    )
+    texto: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    leido_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    remitente: Mapped["Usuario"] = relationship(foreign_keys=[remitente_id])
+    destinatario: Mapped["Usuario"] = relationship(foreign_keys=[destinatario_id])
