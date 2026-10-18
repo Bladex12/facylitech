@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { endpoints } from '../../../api/endpoints'
 import type { CandidatoTecnico, Emergencia } from '../../../api/types'
-import { useAuth } from '../../../auth/AuthContext'
+import { useAuth } from '../../../auth/useAuth'
 import { Avatar } from '../../../components/operador/Avatar'
 import { Cargando, ErrorConsulta, Vacio } from '../../../components/operador/EstadoConsulta'
 import { formatoDistancia, formatoEta } from '../../../domain/cercania'

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import type { RolUsuario } from '../api/types'
-import { useAuth } from './AuthContext'
+import { useAuth } from './useAuth'
 import { PantallaCarga } from './PantallaCarga'
 import { rutaInicial } from './sesion'
 

@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -10,8 +8,8 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { endpoints } from '../api/endpoints'
 import { fijarToken, onNoAutorizado } from '../api/client'
-import type { Usuario } from '../api/types'
 import { limpiarCachesServiceWorker } from './limpiarCaches'
+import { AuthContext, type MotivoCierre, type AuthContextValue } from './useAuth'
 import {
   borrarSesionGuardada,
   guardarSesion,
@@ -27,22 +25,8 @@ import {
  * `usuario` en null, los guards de `App.tsx` redirigen a `/login`.
  */
 
-/** Por qué no hay sesión: lo usa /login para avisar y los guards para recordar la ruta. */
-export type MotivoCierre = 'voluntario' | 'expirada' | null
-
-interface AuthContextValue {
-  usuario: Usuario | null
-  /** true mientras se valida la sesión guardada con `GET /auth/me` (evita parpadear /login). */
-  cargando: boolean
-  motivoCierre: MotivoCierre
-  login: (email: string, password: string) => Promise<Usuario>
-  logout: () => void
-}
-
 /** Máximo que se muestra la pantalla de carga mientras `GET /auth/me` responde. */
 const ESPERA_VALIDACION_MS = 4000
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 function sesionInicial(): { sesion: Sesion | null; motivo: MotivoCierre } {
   try {
@@ -143,10 +127,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth debe usarse dentro de <AuthProvider>')
-  return ctx
 }

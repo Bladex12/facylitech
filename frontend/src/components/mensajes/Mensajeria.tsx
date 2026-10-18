@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { endpoints } from '../../api/endpoints'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/useAuth'
 import type { Conversacion, Mensaje, OrdenTrabajo } from '../../api/types'
 import { diaLocal, etiquetaDia, formatoHora, formatoMarcaChat } from '../../domain/tiempo'
 import { useAhora } from '../../lib/red'

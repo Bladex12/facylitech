@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { endpoints } from '../../api/endpoints'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/useAuth'
 import type { Coordenadas } from '../../api/types'
 
 /** Todas las OTs del técnico (RNF-06: ~20 usuarios, 100 alcanza de sobra). Clave compartida por Agenda, Trabajos, Mapa y QR. */

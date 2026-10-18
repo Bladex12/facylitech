@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { endpoints } from '../../api/endpoints'
 import type { AsignacionTecnico } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/useAuth'
 import { Cargando, ErrorCarga, Vacio } from '../../components/EstadosCarga'
 import { linksNavegacion } from '../../components/mapa/mapaUtils'
 import {

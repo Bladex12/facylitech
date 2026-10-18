@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { endpoints } from '../../api/endpoints'
 import type { Papeleta } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/useAuth'
 import { Cargando, ErrorCarga } from '../../components/EstadosCarga'
 import { linksNavegacion } from '../../components/mapa/mapaUtils'
 import { SEMAFORO_BADGE_CLASS, SEMAFORO_LABEL } from '../../domain/semaforo'

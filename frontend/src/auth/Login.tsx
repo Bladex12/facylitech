@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { AlertTriangle, Building2, CalendarCheck, ClipboardCheck, Info, Loader2, Zap } from 'lucide-react'
-import { useAuth } from './AuthContext'
+import { useAuth } from './useAuth'
 import { CampoPassword } from './CampoPassword'
 import { describirErrorLogin } from './errores'
 import { PantallaCarga } from './PantallaCarga'

@@ -13,7 +13,7 @@ import {
   WifiOff,
   Zap,
 } from 'lucide-react'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/useAuth'
 import { CambiarPassword } from '../../auth/CambiarPassword'
 import { useNoLeidos } from '../../components/mensajes/useMensajes'
 import { useEnLinea } from '../../lib/red'

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarCheck } from 'lucide-react'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/useAuth'
 import { Cargando, ErrorCarga, Vacio } from '../../components/EstadosCarga'
 import { esPendiente } from '../../domain/agrupacion'
 import { formatoDiaLargo } from '../../domain/fechas'
