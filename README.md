@@ -117,28 +117,6 @@ comunidades, 68 equipos (ascensores, montacargas y montaplatos), 3 técnicos y
 el cronograma de mantenciones de octubre. Las coordenadas, operador, contactos
 y pautas son simulados. Es idempotente: se puede volver a correr.
 
-## Variables de entorno
-
-Definidas en `.env` (raíz) y documentadas en `.env.example`:
-
-| Variable | Para qué | Por defecto |
-|---|---|---|
-| `DATABASE_URL` | Conexión a PostgreSQL | local (Docker) |
-| `ENVIRONMENT` | `development` u otro | `development` |
-| `CORS_ORIGINS` | Orígenes permitidos del front | `http://localhost:5173` |
-| `JWT_SECRET` | Firma de tokens. Fuera de desarrollo es obligatoria y de ≥ 32 caracteres, o el backend no arranca | valor inseguro solo en desarrollo |
-| `JWT_TTL_OPERADOR_HORAS` / `JWT_TTL_TECNICO_HORAS` | Duración de la sesión | 12 / 24 |
-| `SEED_PASSWORD` | Contraseña de las cuentas demo | `facylitech2026` |
-| `TIEMPO_RESPUESTA_EMERGENCIA_MIN` | Minutos para aceptar una emergencia antes de pasar al siguiente técnico | 5 |
-| `STORAGE_BACKEND` | Fotos: `local` o `supabase` | `local` |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET` | Solo con `supabase` (bucket público) | — |
-
-Genera un secreto para producción con:
-`python -c "import secrets; print(secrets.token_urlsafe(48))"`
-
-En el frontend (`frontend/.env`): `VITE_API_URL` (URL de la API) y
-`VITE_MOSTRAR_CUENTAS_DEMO` (solo demo).
-
 ## Comandos
 
 ### Backend (`backend/`)
@@ -169,20 +147,6 @@ docker exec facylitech-db createdb -U facylitech facylitech_test
 | `npm run test` | Corre Vitest |
 | `npm run lint` | Lint (oxlint) |
 
-## Problemas frecuentes
-
-- **`alembic upgrade head` no conecta**: la base no está lista. Revisa
-  `docker compose ps` y espera a que el healthcheck diga `healthy`.
-- **El login dice credenciales inválidas**: ¿corriste `seed.py`? Si ya existían
-  usuarios de antes de la autenticación, corre `alembic upgrade head` y
-  `python seed.py` de nuevo para asignarles contraseña.
-- **El front no carga datos**: revisa que `VITE_API_URL` apunte al puerto
-  donde corre el backend, y que ese origen esté en `CORS_ORIGINS`.
-- **Las fotos no se ven**: con `STORAGE_BACKEND=local` se sirven desde el
-  backend en `/media`; no cambies de puerto sin ajustar `VITE_API_URL`.
-- **Cámara y GPS en el celular**: el navegador solo los permite en HTTPS (o
-  `localhost`). Para probar en un teléfono real usa un túnel HTTPS o un deploy.
-
 ## Estructura del repositorio
 
 ```
@@ -208,13 +172,3 @@ facylitech/
   empresa y qué se simuló.
 - [`docs/mockup/`](./docs/mockup/) — mockup validado con el cliente (HTML
   compilado + código fuente de referencia).
-
-## Limitaciones conocidas
-
-- El contador de intentos fallidos de login está en memoria (se reinicia con el
-  servidor).
-- No hay refresh ni revocación de tokens: cambiar la contraseña no cierra las
-  sesiones ya abiertas.
-- `/media` (fotos de evidencia) es público, aunque las rutas no son adivinables.
-- Sin recuperación de contraseña por correo: la restablece un operador.
-- Cámara, GPS y captura de fotos no se probaron en un celular real.
