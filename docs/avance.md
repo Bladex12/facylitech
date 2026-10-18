@@ -259,3 +259,43 @@ falsa (video y4m con un QR). Tests Vitest pasando.
 **Pendiente:** probar contra los endpoints reales de backend-geo
 (asignaciones, `ascensores/qr`, evidencias, ubicación) al integrar; probar
 en un celular real (cámara, GPS, `capture="environment"`).
+
+---
+
+## 🏁 2026-10-18 — Integración y verificación de punta a punta
+
+Se integraron las 5 líneas de trabajo (backend datos de la empresa, backend
+geo/cascada/evidencias, operador mapa/emergencias/técnicos, operador
+ascensores/calendario/agenda, técnico + mensajería). Verificado en navegador
+real contra el backend real (sin mocks): las 8 vistas del operador y las 6 del
+técnico cargan sin errores; despacho en cascada (operador aprueba → técnico
+acepta → se crea la OT de emergencia → al completarla se cierra la
+emergencia y el técnico queda disponible); subida de foto de evidencia;
+búsqueda por QR; reporte de ubicación; completar OT. Backend: 138 tests +
+ruff limpio. Frontend: 72 tests, build y lint limpios.
+
+### Resumen de avance de la Gantt (al 18-10-2026)
+
+| Tarea | Gantt | Estado |
+|---|---|---|
+| Fase 1 completa + 🏁 Hito 1 | 31-ago a 13-sep | 100 % |
+| APIs REST CRUD, papeleta, dashboard calendario/semáforos | 14 a 27-sep | 100 % |
+| Storage de fotos (evidencia) | 28-sep a 4-oct | 100 % (local en dev; Supabase configurable, falta credenciales) |
+| Mapa Leaflet + OSM con datos reales del seed | 28-sep a 4-oct | 100 % |
+| Lector de código QR (cámara) | 5 a 11-oct | 100 % (falta probar en celular real) |
+| 🏁 Hito 2: interfaz navegable completa | 11-oct | 100 % — incluso las vistas que la Gantt no exigía |
+| Algoritmo geográfico (Haversine/PostGIS) | 12 a 25-oct | 100 % |
+| Lógica de asignación en cascada | 12 a 25-oct | 100 % |
+| Integración de API real con Operador | 19-oct a 1-nov | ~90 %: todas las vistas ya usan la API real; falta pulir con feedback |
+| Tracking GPS por eventos de botones | 26-oct a 1-nov | Gancho hecho (ubicación al iniciar/completar); falta el botón explícito "Llegué" |
+| 🏁 Hito 3: MVP funcional conectado | 1-nov | Adelantado |
+
+**Pendiente / riesgos:** credenciales reales de Supabase Storage; probar en un
+celular real (cámara, GPS, `capture`); confirmar con la empresa la lista de
+datos faltantes de `docs/datos-simulacion.md` §4 (coordenadas reales,
+especialidades, pautas por tipo de equipo, SLA); despliegue (sujeto a
+factibilidad de servidor); sin auth real todavía (selector de desarrollo).
+
+> Nota: en `Carta Gantt Facylitech II.xlsx` la tarea "Integración de API real
+> con Operador" tiene las fechas con año 2016 (19-10-16 a 1-11-16); es un
+> error de tipeo de la planilla (debería ser 2026).

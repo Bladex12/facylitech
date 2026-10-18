@@ -27,8 +27,9 @@ rediseñar. Tokens de color: navy `#0D1B2A`, naranjo `#EA580C` (hover
 `#111827`/`#6B7280`, tipografía Barlow — definidos como variables CSS en
 `frontend/src/index.css` (`var(--color-navy)`, `var(--color-accent)`, etc.).
 
-Todo el código, commits y UI van **en español** (nombres propios del seed —
-edificios, técnicos — se mantienen tal como están en el mockup). Dominio en
+Todo el código, commits y UI van **en español**. Los datos del seed son los de
+simulación que entregó la empresa (`docs/datos-simulacion.md`: 10 comunidades,
+68 equipos, 3 técnicos), no los del mockup; se mantienen sus nombres propios. Dominio en
 español: `edificio`, `ascensor`, `orden_trabajo`, `papeleta`.
 
 ## Stack
@@ -164,10 +165,12 @@ frontend/src/
 ├── api/          # client.ts (fetch wrapper), endpoints.ts, types.ts (DTOs)
 ├── auth/          # AuthContext (usuario en localStorage) + SelectorUsuario (auth de dev)
 ├── domain/        # semaforo.ts (colores), ordenamiento.ts, fechas.ts — espejo del backend
-├── components/    # componentes compartidos (Proximamente, etc.)
+├── components/    # compartidos: mapa/ (Leaflet), mensajes/, operador/, EstadosCarga
 └── routes/
-    ├── operador/  # Layout.tsx (sidebar azul marino), Dashboard.tsx (calendario+semáforos)
-    └── tecnico/    # Layout.tsx (barra inferior), Agenda.tsx, OrdenDetalle.tsx, OrdenCard.tsx
+    ├── operador/  # Layout (sidebar), Dashboard, Mapa, Emergencias (cascada), Tecnicos,
+    │              # ascensores/, calendario/, agenda/, comun/ (modal Nueva OT, panel de OT)
+    └── tecnico/    # Layout (barra inferior), Agenda, Trabajos, Mapa, Emergencias,
+                    # Escanear (QR), OrdenDetalle (papeleta + fotos), OrdenCard
 ```
 
 - Dos árboles de rutas bajo un solo proyecto Vite: `/operador/*` y `/tecnico/*`.
@@ -175,8 +178,8 @@ frontend/src/
   usuario elegido en `localStorage`; no hay JWT. `RequireOperador`/
   `RequireTecnico` en `App.tsx` redirigen según rol. Diseñado para
   reemplazarse por auth real sin tocar el resto de la app.
-- Secciones de navegación no construidas muestran `<Proximamente titulo="..." />`
-  en vez de dejarlas fuera del menú.
+- Todas las secciones del menú están construidas; `<Proximamente />` queda
+  disponible para futuras secciones.
 - El semáforo del backend (`completado|vencido|en_curso|programado`) mapea a
   colores en `domain/semaforo.ts` (verde/rojo/amarillo/azul) — es la única
   fuente de verdad de esos colores en el frontend.
