@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from collections.abc import AsyncGenerator
 
@@ -17,7 +18,9 @@ if sys.platform == "win32":
     # rompe la conexión al cruzar límites de fixture/test.
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-TEST_DATABASE_URL = "postgresql+asyncpg://facylitech:facylitech@localhost:5432/facylitech_test"
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL", "postgresql+asyncpg://facylitech:facylitech@localhost:5432/facylitech_test"
+)
 
 
 @pytest_asyncio.fixture(scope="session")
