@@ -84,3 +84,18 @@ class Semaforo(StrEnum):
     VENCIDO = "vencido"
     EN_CURSO = "en_curso"
     PROGRAMADO = "programado"
+
+
+class EstadoAsignacion(StrEnum):
+    """Estado de un técnico dentro de la cascada de despacho de una emergencia.
+
+    en_espera: más abajo en la cascada, aún no notificado.
+    pendiente: notificado, esperando respuesta (expira tras el tiempo de respuesta).
+    """
+
+    EN_ESPERA = "en_espera"
+    PENDIENTE = "pendiente"
+    ACEPTADA = "aceptada"
+    RECHAZADA = "rechazada"
+    EXPIRADA = "expirada"
+    CANCELADA = "cancelada"
