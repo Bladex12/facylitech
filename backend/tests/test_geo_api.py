@@ -8,6 +8,7 @@ from tests.fabricas import (
     ESTACION_CENTRAL,
     MAIPU,
     PLAZA_DE_ARMAS,
+    como,
     crear_ascensor,
     crear_edificio,
     crear_emergencia,
@@ -30,12 +31,15 @@ async def test_registrar_ubicacion_devuelve_coordenadas(client):
 @pytest.mark.asyncio
 async def test_registrar_ubicacion_valida_rango_y_existencia(client):
     tecnico = await crear_tecnico(client)
-    r = await client.post(f"/api/v1/usuarios/{tecnico['id']}/ubicacion", json={"lat": 120, "lon": 0})
-    assert r.status_code == 422
-    r = await client.post(
-        "/api/v1/usuarios/00000000-0000-0000-0000-000000000000/ubicacion", json={"lat": 0, "lon": 0}
-    )
-    assert r.status_code == 404
+    # La ubicación solo la registra el propio usuario (contrato de autenticación).
+    with como(client, tecnico):
+        r = await client.post(f"/api/v1/usuarios/{tecnico['id']}/ubicacion", json={"lat": 120, "lon": 0})
+        assert r.status_code == 422
+        # Un id inexistente nunca es "el propio": 403 (antes 404, indistinguible de uno ajeno).
+        r = await client.post(
+            "/api/v1/usuarios/00000000-0000-0000-0000-000000000000/ubicacion", json={"lat": 0, "lon": 0}
+        )
+        assert r.status_code == 403
 
 
 @pytest.mark.asyncio

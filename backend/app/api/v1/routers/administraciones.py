@@ -1,7 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.api.v1.auth import requerir_operador
 from app.api.v1.deps import AdministracionRepoDep
 from app.api.v1.schemas.administraciones import AdministracionCrear, AdministracionOut
 from app.api.v1.schemas.common import Pagina
@@ -15,7 +16,9 @@ from app.application.use_cases.administraciones import (
 from app.infrastructure.db.models import Administracion
 from app.infrastructure.geo import coords_desde_punto
 
-router = APIRouter(prefix="/administraciones", tags=["administraciones"])
+router = APIRouter(
+    prefix="/administraciones", tags=["administraciones"], dependencies=[Depends(requerir_operador)]
+)
 
 
 @router.get("", response_model=Pagina[AdministracionOut])

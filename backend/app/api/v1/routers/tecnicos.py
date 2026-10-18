@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.api.v1.auth import requerir_operador
 from app.api.v1.deps import TecnicoRepoDep
 from app.api.v1.schemas.tecnicos import CandidatoTecnicoOut
 from app.api.v1.serializers import construir_candidato_out
 from app.application.use_cases.cascada import tecnicos_cercanos
 
-router = APIRouter(prefix="/tecnicos", tags=["tecnicos"])
+router = APIRouter(prefix="/tecnicos", tags=["tecnicos"], dependencies=[Depends(requerir_operador)])
 
 
 @router.get("/cercanos", response_model=list[CandidatoTecnicoOut])

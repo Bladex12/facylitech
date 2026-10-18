@@ -1,8 +1,9 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from app.api.v1.auth import papeleta_accesible
 from app.api.v1.deps import AlmacenamientoDep, PapeletaRepoDep
 from app.api.v1.schemas.papeletas import (
     ChecklistItemMarcar,
@@ -30,7 +31,9 @@ from app.application.use_cases.papeletas import (
 )
 from app.domain.evidencias import TAMANO_MAXIMO_BYTES
 
-router = APIRouter(prefix="/papeletas", tags=["papeletas"])
+# Todas las rutas cuelgan de /papeletas/{id_}: se autorizan por la OT de la papeleta
+# (operador: todas; técnico: solo si la OT es suya).
+router = APIRouter(prefix="/papeletas", tags=["papeletas"], dependencies=[Depends(papeleta_accesible)])
 
 
 @router.get("/{id_}", response_model=PapeletaOut)
