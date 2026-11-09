@@ -368,3 +368,75 @@ proceso); sin refresh ni revocación de tokens (cambiar la contraseña no cierra
 sesiones abiertas); `/media` público (rutas con UUID); `/login` queda fuera del
 scope PWA `/tecnico/` (puede verse una barra superior solo en el login de la app
 instalada). Falta `JWT_SECRET` real para cualquier despliegue.
+
+---
+
+## 2026-11-09 — Tracking GPS por eventos de botones (cierre)
+
+Botón **"Llegué al edificio"** en el detalle de la OT (confirma el envío o avisa
+si no hubo GPS/red) y reporte de ubicación al **aceptar una emergencia**, además
+de Iniciar/Completar. 3 tests Vitest. **Falta:** probar en un celular real.
+
+## 2026-11-09 — Replicar cronograma al mes siguiente
+
+Botón "Replicar a {mes}" del mockup en el calendario del operador con vista
+previa (por día, equipos omitidos y sin técnico) y confirmación.
+`POST /ordenes-trabajo/replicar` + regla pura `domain/replicacion.py` (+4
+semanas). Idempotente. 7 tests de dominio + 4 de API + matriz de autorización.
+
+## 2026-11-09 — QA y corrección de bugs
+
+Recorrido con Playwright de las 8 vistas del operador y las 6 del técnico
+contra el backend real (sin errores de API ni de consola), flujo completo de la
+papeleta a 390 × 844, despacho en cascada aceptado desde el celular. Bugs
+corregidos:
+- Papeleta enviada se podía editar y reenviar → ahora 409 (test nuevo).
+- Se podía enviar la papeleta con 0 ítems marcados sin aviso → confirmación.
+- Dashboard: celdas vacías del calendario se veían seleccionadas; "hoy" en UTC.
+- Seed con ciclos fijos: pasado el 6-nov mostraba 68 OTs vencidas → ciclos
+  generados hasta el próximo según la fecha.
+- Test que vencía con el calendario (fecha fija 2026-11-05).
+**Falta:** prueba en celular real (cámara, GPS, `capture`, instalación PWA).
+
+## 2026-11-09 — Despliegue
+
+`docker-compose.prod.yml` (PostGIS + backend + Caddy con HTTPS automático),
+Dockerfiles, `.env.prod.example`, `crear_operador.py` y `docs/despliegue.md`.
+Verificado por piezas (sin acceso a Docker Hub en el entorno de desarrollo):
+instalación limpia del backend, entrypoint en modo producción, Caddyfile real
+por HTTPS con recorrido en navegador (login, foto, service worker).
+**Falta:** `docker compose -f docker-compose.prod.yml up --build` una vez en una
+máquina con Docker, y definir servidor/dominio con Facylitech.
+
+## 2026-11-09 — Manual técnico
+
+`docs/manual-tecnico.docx` (15 páginas): arquitectura, modelo de datos, reglas
+de negocio, API con matriz de permisos, seguridad, desarrollo, despliegue,
+pruebas y límites conocidos. README actualizado.
+
+### Resumen de avance de la Gantt (al 09-11-2026)
+
+| Tarea | Gantt | Estado |
+|---|---|---|
+| Fases 1 y 2 + 🏁 Hitos 1 y 2 | 31-ago a 11-oct | 100 % |
+| Algoritmo geográfico, cascada | 12 a 25-oct | 100 % |
+| Integración de API real con Operador | 19-oct a 1-nov | 100 % (+ replicar cronograma) |
+| Tracking GPS por eventos de botones | 26-oct a 1-nov | 100 % |
+| 🏁 Hito 3: MVP funcional conectado | 1-nov | Cumplido |
+| Pruebas de usabilidad y corrección de bugs | 2 a 15-nov | Hecho en entorno de pruebas; falta celular real y feedback del cliente |
+| Despliegue (sujeto a factibilidad) | 9 a 15-nov | Empaquetado y verificado; falta servidor de Facylitech |
+| Redacción de manual técnico y código | 16 a 20-nov | 100 % (adelantado) |
+| 🏁 Hito 4: Entrega final | 20-nov | Listo para entregar |
+
+Backend: 345 tests, ruff limpio. Frontend: 133 tests, build, tsc y lint limpios.
+
+### Checklist de entrega (Hito 4)
+
+- [x] Código en el repositorio con README de puesta en marcha
+- [x] Manual técnico (`docs/manual-tecnico.docx`)
+- [x] Guía de despliegue (`docs/despliegue.md`) y archivos de Docker
+- [x] Datos de simulación de la empresa cargables con `seed.py`
+- [ ] Construir las imágenes una vez con Docker (`docker-compose.prod.yml`)
+- [ ] Probar la app del técnico en un celular real por HTTPS
+- [ ] Confirmar con Facylitech los datos de `docs/datos-simulacion.md` §4
+- [ ] Corregir en la planilla Gantt el año de "Integración de API real" (dice 2016)

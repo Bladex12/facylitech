@@ -495,3 +495,38 @@ Contrato en `docs/contrato-auth.md`. Decisiones de implementación y límites:
   Aserciones modificadas por el contrato (404/422 -> 403): ubicación de id
   inexistente, conversaciones de un `usuario_id` inexistente y `operador_id`
   que no es operador.
+
+## 2026-11-09 — Cierre de la Gantt: GPS por eventos, replicar cronograma, QA y despliegue
+
+- **Botón "Llegué al edificio"** (tracking por eventos de botones): es opcional
+  y solo envía la ubicación (no guarda una hora de llegada en la OT). Iniciar y
+  Completar ya la reportan, así que no agrega pasos obligatorios (RNF-01).
+  Aceptar una emergencia también reporta la posición. Sin tracking continuo.
+- **Regla de "Replicar a {mes}"**: el mockup copiaba el mismo número de día
+  (07 → 07), lo que cambia el día de la semana y producía los "conflictos con
+  domingo" que el mockup mostraba. Se probaron otras dos reglas: "misma
+  ocurrencia del día" (1.er miércoles → 1.er miércoles) y "misma semana desde el
+  primer lunes"; ninguna reproduce el ciclo que describió la empresa (oct 7–9
+  → nov 4–6) para los tres días a la vez. La regla final, **+4 semanas (5 si con
+  4 sigue en el mismo mes)**, sí lo reproduce, conserva día de la semana y hora,
+  deja un intervalo de 28–35 días entre visitas, nunca cae en domingo y todo el
+  mes cae en el siguiente. Consecuencia: el ciclo "se adelanta" 2–3 días por mes
+  y cada ~10 meses salta 5 semanas. Si la empresa prefiere fechas fijas del mes,
+  se cambia solo `domain/replicacion.py::fecha_equivalente`.
+- **Replicar no duplica**: un equipo con mantención no cancelada en el mes de
+  destino se omite (`ya_programada`); si un equipo tiene 2+ mantenciones en el
+  mes de origen se replica la primera. Se replican solo mantenciones (las
+  reparaciones, inspecciones y emergencias son puntuales). La replicación es
+  siempre en dos pasos: vista previa (`simular: true`, default) y confirmación.
+- **Seed relativo a la fecha**: ver `docs/datos-simulacion.md` §2.
+- **Papeleta enviada inmutable** (bug encontrado en QA): solo las fotos estaban
+  bloqueadas; editar el informe, marcar ítems, agregar/quitar piezas y reenviar
+  (que sobrescribía `hora_fin`) seguían permitidos. Ahora todo responde 409. No
+  se exige el checklist completo ni el "trabajo realizado" para enviar (un ítem
+  puede no realizarse legítimamente): el técnico confirma si quedan ítems sin
+  marcar. Enviar espera los guardados en vuelo para no chocar con el bloqueo.
+- **Despliegue**: Caddy como servidor web y proxy en el mismo dominio (sin CORS,
+  HTTPS automático, necesario para GPS/cámara/PWA en el celular). Un solo
+  proceso de uvicorn (contador de intentos en memoria). Las migraciones corren
+  al arrancar el contenedor. `crear_operador.py` resuelve el primer usuario de
+  una instalación real (la API solo deja crear usuarios a un operador).

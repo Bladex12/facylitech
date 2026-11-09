@@ -68,13 +68,20 @@ documento = administraciones + dueños directos), 10 `edificio`, **68 equipos**
   reparten parejo dentro del tramo. Edificios que aparecen 2 días (Clínica
   Aether, Alva, Nova Horizon) reparten sus equipos entre esos días (Alva:
   Torre Sur el jueves, Torre Norte el viernes).
-- **Ciclo siguiente**: mismo patrón el mié 04, jue 05 y vie 06 de noviembre
-  de 2026, todo `programado`.
-- **Estado del ciclo de octubre** (hoy = 18-oct): 65 de 68 OTs `completado`
-  con papeleta `enviada` (checklist de octubre marcado, trabajo realizado,
-  algunas piezas reemplazadas). 3 quedan `programado` en el pasado → semáforo
-  **vencido** (alerta de incumplimiento): AET-A17, AET-A18 (jue 08) y
-  BIO-MC1 (vie 09).
+- **Ciclos siguientes** ("será ideal reutilizar la misma data en un ciclo
+  siguiente"): a partir del cronograma de octubre, el seed genera cada ciclo
+  con la regla del botón "Replicar" (+4 semanas, o 5 si con 4 sigue en el mismo
+  mes; `domain/replicacion.py`) **hasta el primer ciclo que empieza después de
+  la fecha en que se corre**: oct 7–9 → nov 4–6 → dic 2–4 → … Así la demo sigue
+  vigente sin importar cuándo se ejecute el seed (antes los ciclos de octubre y
+  noviembre estaban fijos y, pasado el 6-nov, las 68 OTs de noviembre aparecían
+  vencidas).
+- **Estado de los ciclos**: lo ya ocurrido queda `completado` con papeleta
+  `enviada` (checklist del mes marcado, trabajo realizado; las piezas
+  reemplazadas solo en el ciclo de octubre); lo futuro queda `programado`. Del
+  **último ciclo ya iniciado**, 3 OTs quedan `programado` en el pasado →
+  semáforo **vencido** (alerta de incumplimiento): AET-A17, AET-A18 (jueves) y
+  BIO-MC1 (viernes).
 
 ## 3. Qué se simuló o aproximó
 
@@ -130,5 +137,6 @@ documento = administraciones + dueños directos), 10 `edificio`, **68 equipos**
 13. **Torre Bioma**: tipo de edificio (residencial u oficinas) y a qué
     pisos sirve el montacarga (3).
 14. **Mañas e instrucciones de reinicio** reales por edificio/equipo.
-15. **Ciclo siguiente**: confirmar que se repite el mismo cronograma (se
-    asumió primera semana de noviembre, mié 04 – vie 06).
+15. **Ciclo siguiente**: confirmar que se repite el mismo cronograma cada
+    4 semanas (se asumió mié 04 – vie 06 de noviembre, mié 02 – vie 04 de
+    diciembre, etc.).

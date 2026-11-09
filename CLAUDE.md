@@ -86,6 +86,9 @@ npm run lint         # oxlint
 ### Infraestructura
 
 ```bash
+# Producción (ver docs/despliegue.md): db + backend + Caddy con HTTPS
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+python crear_operador.py --nombre "..." --email ...   # primer operador sin seed
 docker compose up -d
 docker inspect --format='{{.State.Health.Status}}' facylitech-db
 docker exec facylitech-db createdb -U facylitech facylitech_test  # una vez, para tests
@@ -149,6 +152,12 @@ Puntos clave de esta arquitectura:
   filtra los `PautaItem` cuyo `meses: int[]` incluye el mes en curso; se usa
   al crear la papeleta (`use_cases/papeletas.py::crear_papeleta_desde_orden`).
   `PapeletaOut.total_items_pauta` permite mostrar "X de Y ítems" en el front.
+- **Replicar cronograma** (`domain/replicacion.py`, `POST /ordenes-trabajo/replicar`):
+  +4 semanas (5 si sigue en el mismo mes), mismo día de la semana, hora y técnico;
+  omite equipos ya programados en el destino. El seed usa la misma regla para
+  generar los ciclos hasta el próximo según la fecha actual.
+- **Papeleta enviada = inmutable**: toda modificación (informe, ítems, piezas,
+  fotos, reenviar) responde 409 (`use_cases/papeletas.py::_papeleta_editable`).
 - **Jerarquía de 4 niveles**: `Cliente → Administracion → Edificio →
   Ascensor`. Navegación drill-down: `GET /clientes/{id}/administraciones`,
   `GET /administraciones/{id}/edificios`, `GET /ascensores?edificio_id=`,
