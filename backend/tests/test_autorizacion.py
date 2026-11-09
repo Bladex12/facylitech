@@ -200,6 +200,12 @@ MATRIZ: list[Ep] = [
             "fecha_programada": datetime.now(UTC).isoformat(),
         },
     ),
+    Ep(
+        "POST",
+        "/ordenes-trabajo/replicar",
+        "operador",
+        json=lambda m, yo: {"mes": "2026-11", "simular": True},
+    ),
     Ep("PATCH", "/ordenes-trabajo/{id_}", "operador", "orden", json=lambda m, yo: {"descripcion": "x"}),
     Ep("POST", "/ordenes-trabajo/{id_}/cancelar", "operador", "orden"),
     Ep("POST", "/ordenes-trabajo/{id_}/iniciar", "orden", "orden"),

@@ -27,6 +27,7 @@ import { useEdificios, useOrdenes, useTecnicos } from '../comun/consultas'
 import { LeyendaSemaforo, NavegadorPeriodo, SelectFiltro } from '../comun/filtros'
 import { NuevaOrdenModal, type ValoresInicialesOrden } from '../comun/NuevaOrdenModal'
 import { OrdenPanel } from '../comun/OrdenPanel'
+import { useReplicarCronograma } from './ReplicarCronograma'
 import { CLASE_BOTON_PRIMARIO, CLASE_TARJETA, ErrorVista } from '../comun/ui'
 
 const SIN_TECNICO = 'sin'
@@ -118,6 +119,10 @@ export function Calendario() {
     } else set({ fecha: sumarDias(ref, 7 * delta) })
   }
 
+  const replicacion = useReplicarCronograma(anio, mes, (a, m) =>
+    set({ vista: null, fecha: `${a}-${String(m).padStart(2, '0')}-01` }),
+  )
+
   const crearEn = (fecha: string, franja: MedioDia = 'manana') =>
     setNueva({
       fecha,
@@ -157,11 +162,14 @@ export function Calendario() {
             onHoy={() => set({ fecha: null })}
             ancho="min-w-[170px]"
           />
+          {vista === 'mes' && replicacion.boton}
           <button onClick={() => crearEn(fechaSugerida(ref, hoy))} className={CLASE_BOTON_PRIMARIO}>
             <Plus size={14} /> Nueva OT
           </button>
         </div>
       </div>
+
+      {replicacion.panel}
 
       <div className={`${CLASE_TARJETA} flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3`}>
         <SelectFiltro

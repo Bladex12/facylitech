@@ -418,3 +418,29 @@ export interface EmergenciaCrear {
   descripcion?: string | null
   solicitante?: string | null
 }
+
+/** POST /ordenes-trabajo/replicar: copia las mantenciones de un mes al siguiente. */
+export interface OrdenReplicada {
+  origen_codigo: string
+  ascensor_codigo: string
+  edificio_nombre: string
+  tecnico_nombre: string | null
+  fecha_origen: string
+  fecha_programada: string
+  /** Código de la OT creada; null en la vista previa. */
+  codigo: string | null
+}
+
+export interface ReplicacionCronograma {
+  mes_origen: string
+  mes_destino: string
+  simulacion: boolean
+  total_crear: number
+  crear: OrdenReplicada[]
+  omitidas: {
+    origen_codigo: string
+    ascensor_codigo: string
+    edificio_nombre: string
+    motivo: 'ya_programada' | 'duplicada_en_origen'
+  }[]
+}

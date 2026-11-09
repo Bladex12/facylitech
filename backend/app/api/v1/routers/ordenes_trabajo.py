@@ -13,9 +13,13 @@ from app.api.v1.auth import (
 from app.api.v1.deps import OrdenRepoDep, PapeletaRepoDep, UsuarioRepoDep
 from app.api.v1.schemas.common import Pagina
 from app.api.v1.schemas.ordenes_trabajo import (
+    OrdenOmitidaOut,
+    OrdenReplicada,
     OrdenTrabajoActualizar,
     OrdenTrabajoCrear,
     OrdenTrabajoOut,
+    ReplicacionOut,
+    ReplicarCronograma,
 )
 from app.api.v1.schemas.papeletas import PapeletaOut
 from app.api.v1.serializers import construir_orden_out
@@ -28,10 +32,12 @@ from app.application.use_cases.ordenes_trabajo import (
     iniciar_orden,
     listar_ordenes,
     obtener_orden,
+    replicar_cronograma,
 )
 from app.application.use_cases.papeletas import crear_papeleta_desde_orden
 from app.domain.enums import EstadoOrdenTrabajo, TipoOrdenTrabajo
 from app.domain.transiciones import TransicionInvalidaError
+from app.infrastructure.config import settings
 from app.infrastructure.db.models import OrdenTrabajo
 
 router = APIRouter(prefix="/ordenes-trabajo", tags=["ordenes-trabajo"])
@@ -92,6 +98,50 @@ async def crear(datos: OrdenTrabajoCrear, repo: OrdenRepoDep):
     )
     creada = await crear_orden(repo, orden)
     return construir_orden_out(creada, datetime.now(UTC))
+
+
+@router.post("/replicar", response_model=ReplicacionOut, dependencies=_SOLO_OPERADOR)
+async def replicar(datos: ReplicarCronograma, repo: OrdenRepoDep):
+    """Replica las mantenciones del mes al mes siguiente (botón del calendario).
+
+    `simular=true` (default) devuelve la vista previa sin crear nada; con
+    `simular=false` crea las OTs. Repetirlo no duplica: los equipos que ya tienen
+    mantención en el mes de destino se omiten (`motivo: ya_programada`).
+    """
+    anio, mes = (int(x) for x in datos.mes.split("-"))
+    r = await replicar_cronograma(repo, anio, mes, datos.simular, settings.timezone)
+    codigos = [o.codigo for o in r.creadas] if r.creadas else [None] * len(r.crear)
+    crear = []
+    for plan, codigo in zip(r.crear, codigos, strict=True):
+        o = r.origenes[plan.origen.id]
+        crear.append(
+            OrdenReplicada(
+                origen_codigo=o.codigo,
+                ascensor_codigo=o.ascensor.codigo,
+                edificio_nombre=o.ascensor.edificio.nombre,
+                tecnico_nombre=o.tecnico.nombre if o.tecnico and o.tecnico.activo else None,
+                fecha_origen=o.fecha_programada,
+                fecha_programada=plan.fecha_local,
+                codigo=codigo,
+            )
+        )
+    omitidas = [
+        OrdenOmitidaOut(
+            origen_codigo=r.origenes[om.origen.id].codigo,
+            ascensor_codigo=r.origenes[om.origen.id].ascensor.codigo,
+            edificio_nombre=r.origenes[om.origen.id].ascensor.edificio.nombre,
+            motivo=om.motivo,
+        )
+        for om in r.omitidas
+    ]
+    return ReplicacionOut(
+        mes_origen=f"{r.anio_origen}-{r.mes_origen:02d}",
+        mes_destino=f"{r.anio_destino}-{r.mes_destino:02d}",
+        simulacion=r.simulacion,
+        total_crear=len(crear),
+        crear=crear,
+        omitidas=omitidas,
+    )
 
 
 @router.patch("/{id_}", response_model=OrdenTrabajoOut, dependencies=_SOLO_OPERADOR)

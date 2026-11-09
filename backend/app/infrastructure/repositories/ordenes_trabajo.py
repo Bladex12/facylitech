@@ -84,6 +84,17 @@ class SqlOrdenTrabajoRepository:
         await self.session.commit()
         return await self.obtener(orden.id)
 
+    async def crear_varias(self, ordenes: list[OrdenTrabajo]) -> list[OrdenTrabajo]:
+        """Inserta varias OTs en una sola transacción con códigos correlativos."""
+        total = (
+            await self.session.execute(select(func.count()).select_from(OrdenTrabajo))
+        ).scalar_one()
+        for i, orden in enumerate(ordenes):
+            orden.codigo = f"WO-{_CODIGO_BASE + total + i}"
+        self.session.add_all(ordenes)
+        await self.session.commit()
+        return ordenes
+
     async def siguiente_codigo(self) -> str:
         total = (
             await self.session.execute(select(func.count()).select_from(OrdenTrabajo))

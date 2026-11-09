@@ -23,6 +23,7 @@ import type {
   Pagina,
   Papeleta,
   Pauta,
+  ReplicacionCronograma,
   Usuario,
 } from './types'
 
@@ -147,6 +148,9 @@ export const endpoints = {
     iniciar: (id: string) => api.post<OrdenTrabajo>(`/ordenes-trabajo/${id}/iniciar`),
     completar: (id: string) => api.post<OrdenTrabajo>(`/ordenes-trabajo/${id}/completar`),
     crearPapeleta: (id: string) => api.post<Papeleta>(`/ordenes-trabajo/${id}/papeleta`),
+    /** `mes` = YYYY-MM de origen; `simular` (default true) solo devuelve la vista previa. */
+    replicar: (mes: string, simular: boolean) =>
+      api.post<ReplicacionCronograma>('/ordenes-trabajo/replicar', { mes, simular }),
   },
   papeletas: {
     obtener: (id: string) => api.get<Papeleta>(`/papeletas/${id}`),

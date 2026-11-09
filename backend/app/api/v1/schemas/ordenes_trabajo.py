@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.v1.schemas.common import ActualizacionParcial
 from app.domain.enums import EstadoOrdenTrabajo, PrioridadOrdenTrabajo, Semaforo, TipoOrdenTrabajo
@@ -75,3 +75,36 @@ class OrdenTrabajoOut(BaseModel):
     descripcion: str | None
     papeleta_id: UUID | None = None
     papeleta_estado: str | None = None
+
+
+class ReplicarCronograma(BaseModel):
+    """POST /ordenes-trabajo/replicar: copia las mantenciones de `mes` al mes siguiente."""
+
+    mes: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$", examples=["2026-11"])
+    simular: bool = True
+
+
+class OrdenReplicada(BaseModel):
+    origen_codigo: str
+    ascensor_codigo: str
+    edificio_nombre: str
+    tecnico_nombre: str | None
+    fecha_origen: datetime
+    fecha_programada: datetime
+    codigo: str | None = None  # código de la OT creada (null en simulación)
+
+
+class OrdenOmitidaOut(BaseModel):
+    origen_codigo: str
+    ascensor_codigo: str
+    edificio_nombre: str
+    motivo: str
+
+
+class ReplicacionOut(BaseModel):
+    mes_origen: str
+    mes_destino: str
+    simulacion: bool
+    total_crear: int
+    crear: list[OrdenReplicada]
+    omitidas: list[OrdenOmitidaOut]
