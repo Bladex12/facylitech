@@ -11,8 +11,7 @@ import {
   sumarMeses,
 } from '../../domain/fechas'
 import type { Especialidad, EstadoOrdenTrabajo, Semaforo } from '../../api/types'
-
-const HOY_ISO = new Date().toISOString().slice(0, 10)
+import { fechaIsoLocal } from '../../domain/semana'
 
 const EMERGENCIA_LABEL: Record<Especialidad, string> = {
   persona_atrapada: 'Persona Atrapada',
@@ -31,6 +30,8 @@ export function Dashboard() {
   const hoy = new Date()
   const [periodo, setPeriodo] = useState({ anio: hoy.getFullYear(), mes: hoy.getMonth() + 1 })
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null)
+  // Fecha local (no toISOString, que es UTC: después de las 21:00 en Chile marcaba mañana).
+  const hoyIso = fechaIsoLocal(hoy)
 
   const mesStr = `${periodo.anio}-${String(periodo.mes).padStart(2, '0')}`
   const { data, isLoading } = useQuery({
@@ -153,14 +154,14 @@ export function Dashboard() {
           {semanas.flatMap((semana, si) =>
             semana.map((fecha, di) => {
               const ordenes = fecha ? (ordenesPorDia.get(fecha) ?? []) : []
-              const esHoy = fecha === HOY_ISO
+              const esHoy = fecha === hoyIso
               return (
                 <button
                   key={`${si}-${di}`}
                   disabled={!fecha}
                   onClick={() => fecha && setDiaSeleccionado(fecha)}
                   className={`min-h-24 bg-white p-1.5 text-left align-top disabled:bg-[var(--color-bg-subtle)]/50 ${
-                    diaSeleccionado === fecha ? 'ring-2 ring-[var(--color-navy)] ring-inset' : ''
+                    fecha && diaSeleccionado === fecha ? 'ring-2 ring-[var(--color-navy)] ring-inset' : ''
                   } ${di === 6 ? 'bg-red-50/30' : ''}`}
                 >
                   {fecha && (

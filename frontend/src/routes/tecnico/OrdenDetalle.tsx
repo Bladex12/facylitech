@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -62,6 +62,15 @@ export function OrdenDetalle() {
   const [nuevaPieza, setNuevaPieza] = useState({ nombre: '', marca: '', esOriginal: true })
   const [guardado, setGuardado] = useState<Record<string, EstadoGuardado>>({})
   const [errorAccion, setErrorAccion] = useState<string | null>(null)
+  const [confirmarEnvio, setConfirmarEnvio] = useState(false)
+  // Guardados en vuelo (campos al perder foco, ítems optimistas): enviar los espera,
+  // porque una papeleta enviada ya no acepta cambios (409).
+  const guardadosEnVuelo = useRef(new Set<Promise<unknown>>())
+  const seguir = (p: Promise<unknown>) => {
+    const seguro = p.catch(() => {})
+    guardadosEnVuelo.current.add(seguro)
+    void seguro.finally(() => guardadosEnVuelo.current.delete(seguro))
+  }
 
   const ordenQuery = useQuery({
     queryKey: ['orden', id],
@@ -140,8 +149,15 @@ export function OrdenDetalle() {
     onError: (_e, datos) => setGuardado((g) => ({ ...g, [Object.keys(datos)[0]]: 'error' })),
   })
   const enviarPapeletaMutation = useMutation({
-    mutationFn: () => endpoints.papeletas.enviar(papeleta!.id),
-    onSuccess: invalidar,
+    mutationFn: async () => {
+      setErrorAccion(null)
+      await Promise.all(guardadosEnVuelo.current)
+      return endpoints.papeletas.enviar(papeleta!.id)
+    },
+    onSuccess: () => {
+      setConfirmarEnvio(false)
+      invalidar()
+    },
     onError: alFallar,
   })
   const completarMutation = useMutation({
@@ -213,7 +229,7 @@ export function OrdenDetalle() {
         defaultValue={papeleta?.[campo] ?? ''}
         onBlur={(e) => {
           if ((papeleta?.[campo] ?? '') !== e.target.value)
-            actualizarPapeletaMutation.mutate({ [campo]: e.target.value })
+            seguir(actualizarPapeletaMutation.mutateAsync({ [campo]: e.target.value }))
         }}
         className="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-2.5 text-sm focus:border-[var(--color-accent)] focus:bg-white focus:outline-none disabled:text-[var(--color-text-muted)]"
         rows={2}
@@ -365,7 +381,7 @@ export function OrdenDetalle() {
                 <button
                   key={item.id}
                   disabled={soloLectura}
-                  onClick={() => marcarItemMutation.mutate({ itemId: item.id, completado: !item.completado })}
+                  onClick={() => seguir(marcarItemMutation.mutateAsync({ itemId: item.id, completado: !item.completado }))}
                   className={`flex w-full items-center gap-3 rounded border p-3 text-left transition-all disabled:cursor-default ${
                     item.completado ? 'border-green-100 bg-green-50' : 'border-[var(--color-border)] active:border-slate-400'
                   }`}
@@ -395,7 +411,7 @@ export function OrdenDetalle() {
                   type="checkbox"
                   disabled={soloLectura}
                   checked={papeleta.causada_por_terceros}
-                  onChange={(e) => actualizarPapeletaMutation.mutate({ causada_por_terceros: e.target.checked })}
+                  onChange={(e) => seguir(actualizarPapeletaMutation.mutateAsync({ causada_por_terceros: e.target.checked }))}
                   className="h-4 w-4 accent-[var(--color-accent)]"
                 />
                 Falla causada por terceros
@@ -483,9 +499,41 @@ export function OrdenDetalle() {
             <EvidenciasPapeleta papeleta={papeleta} soloLectura={soloLectura} />
           </section>
 
-          {papeleta.estado === 'borrador' && (
+          {papeleta.estado === 'borrador' && confirmarEnvio && (
+            <div
+              role="alertdialog"
+              aria-label="Confirmar envío"
+              ref={(el) => el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })}
+              className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="flex items-start gap-1.5">
+                <AlertTriangle size={15} className="mt-0.5 flex-shrink-0" />
+                <span>
+                  Quedan <strong>{totalItems - hechos}</strong> de {totalItems} ítems del checklist sin marcar. Se
+                  enviarán como no realizados y la papeleta ya no se podrá modificar.
+                </span>
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setConfirmarEnvio(false)}
+                  className="rounded-lg border border-amber-300 bg-white py-2.5 font-semibold text-amber-800"
+                >
+                  Seguir llenando
+                </button>
+                <button
+                  onClick={() => enviarPapeletaMutation.mutate()}
+                  disabled={enviarPapeletaMutation.isPending}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 py-2.5 font-semibold text-white disabled:opacity-60"
+                >
+                  {enviarPapeletaMutation.isPending && <Loader2 size={15} className="animate-spin" />}
+                  Enviar igual
+                </button>
+              </div>
+            </div>
+          )}
+          {papeleta.estado === 'borrador' && !confirmarEnvio && (
             <button
-              onClick={() => enviarPapeletaMutation.mutate()}
+              // RNF-01: con el checklist completo se envía en un toque; solo pide confirmar si falta algo.
+              onClick={() => (hechos < totalItems ? setConfirmarEnvio(true) : enviarPapeletaMutation.mutate())}
               disabled={enviarPapeletaMutation.isPending}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] py-3.5 text-base font-semibold text-white active:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >

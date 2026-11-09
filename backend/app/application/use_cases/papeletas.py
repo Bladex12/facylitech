@@ -47,7 +47,7 @@ async def obtener_papeleta(repo: PapeletaRepository, id_: UUID) -> Papeleta:
 
 
 async def actualizar_papeleta(repo: PapeletaRepository, id_: UUID, campos: dict) -> Papeleta:
-    papeleta = await obtener_papeleta(repo, id_)
+    papeleta = await _papeleta_editable(repo, id_)
     for campo, valor in campos.items():
         setattr(papeleta, campo, valor)
     return await repo.guardar(papeleta)
@@ -60,6 +60,7 @@ async def marcar_item_checklist(
     completado: bool,
     comentario: str | None,
 ) -> PapeletaItem:
+    await _papeleta_editable(repo, papeleta_id)
     item = await repo.obtener_item(item_id)
     if item is None or item.papeleta_id != papeleta_id:
         raise NoEncontradoError(f"Ítem de checklist {item_id} no encontrado en la papeleta.")
@@ -71,7 +72,8 @@ async def marcar_item_checklist(
 
 
 async def enviar_papeleta(repo: PapeletaRepository, id_: UUID) -> Papeleta:
-    papeleta = await obtener_papeleta(repo, id_)
+    # Reenviar sobrescribiría hora_fin: la papeleta enviada es el respaldo ante el cliente.
+    papeleta = await _papeleta_editable(repo, id_)
     papeleta.estado = EstadoPapeleta.ENVIADA
     papeleta.hora_fin = datetime.now(UTC)
     return await repo.guardar(papeleta)
@@ -80,6 +82,7 @@ async def enviar_papeleta(repo: PapeletaRepository, id_: UUID) -> Papeleta:
 async def agregar_pieza(
     repo: PapeletaRepository, papeleta_id: UUID, nombre: str, marca: str | None, es_original: bool
 ) -> Papeleta:
+    await _papeleta_editable(repo, papeleta_id)
     pieza = PiezaReemplazada(
         papeleta_id=papeleta_id, nombre=nombre, marca=marca, es_original=es_original
     )
@@ -87,13 +90,14 @@ async def agregar_pieza(
 
 
 async def eliminar_pieza(repo: PapeletaRepository, papeleta_id: UUID, pieza_id: UUID) -> Papeleta:
+    await _papeleta_editable(repo, papeleta_id)
     return await repo.eliminar_pieza(papeleta_id, pieza_id)
 
 
 async def _papeleta_editable(repo: PapeletaRepository, papeleta_id: UUID) -> Papeleta:
     papeleta = await obtener_papeleta(repo, papeleta_id)
     if papeleta.estado == EstadoPapeleta.ENVIADA:
-        raise ConflictoError("La papeleta ya fue enviada; no se pueden modificar sus evidencias.")
+        raise ConflictoError("La papeleta ya fue enviada: queda como respaldo y no se puede modificar.")
     return papeleta
 
 

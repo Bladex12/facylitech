@@ -52,6 +52,8 @@ async def actualizar(id_: UUID, datos: PapeletaActualizar, repo: PapeletaRepoDep
         )
     except NoEncontradoError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ConflictoError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.patch("/{id_}/items/{item_id}", response_model=ChecklistItemOut)
@@ -62,6 +64,8 @@ async def marcar_item(id_: UUID, item_id: UUID, datos: ChecklistItemMarcar, repo
         )
     except NoEncontradoError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ConflictoError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/{id_}/enviar", response_model=PapeletaOut)
@@ -70,16 +74,28 @@ async def enviar(id_: UUID, repo: PapeletaRepoDep):
         return await enviar_papeleta(repo, id_)
     except NoEncontradoError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ConflictoError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/{id_}/piezas", response_model=PapeletaOut, status_code=201)
 async def crear_pieza(id_: UUID, datos: PiezaCrear, repo: PapeletaRepoDep):
-    return await agregar_pieza(repo, id_, datos.nombre, datos.marca, datos.es_original)
+    try:
+        return await agregar_pieza(repo, id_, datos.nombre, datos.marca, datos.es_original)
+    except NoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ConflictoError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.delete("/{id_}/piezas/{pieza_id}", response_model=PapeletaOut)
 async def borrar_pieza(id_: UUID, pieza_id: UUID, repo: PapeletaRepoDep):
-    return await eliminar_pieza(repo, id_, pieza_id)
+    try:
+        return await eliminar_pieza(repo, id_, pieza_id)
+    except NoEncontradoError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ConflictoError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/{id_}/evidencias", response_model=EvidenciaOut, status_code=201)
