@@ -1,7 +1,7 @@
 """Integración de la sección 1 del contrato de octubre (backend-datos):
 campos nuevos, PATCH de edificio/ascensor/orden, cancelar y mensajería."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -206,12 +206,14 @@ async def test_patch_orden_reasigna_reprograma_y_prioridad(client):
     t2 = await _crear_usuario(client, "T2", "t2@x.cl", "tecnico")
     op = await _crear_usuario(client, "Op", "op@x.cl", "operador")
     orden = await _crear_orden(client, asc["id"], t1["id"])
+    # Fecha relativa a hoy: con una fecha fija el test pasa a "vencido" cuando llega ese día.
+    nueva_fecha = (datetime.now(UTC) + timedelta(days=30)).replace(microsecond=0).isoformat()
 
     r = await client.patch(
         f"/api/v1/ordenes-trabajo/{orden['id']}",
         json={
             "tecnico_id": t2["id"],
-            "fecha_programada": "2026-11-05T14:00:00-03:00",
+            "fecha_programada": nueva_fecha,
             "prioridad": "alta",
             "descripcion": "Reprogramada por la administración",
         },
@@ -221,9 +223,7 @@ async def test_patch_orden_reasigna_reprograma_y_prioridad(client):
     assert data["tecnico"]["id"] == t2["id"]
     assert data["prioridad"] == "alta"
     assert data["descripcion"] == "Reprogramada por la administración"
-    assert datetime.fromisoformat(data["fecha_programada"]) == datetime.fromisoformat(
-        "2026-11-05T14:00:00-03:00"
-    )
+    assert datetime.fromisoformat(data["fecha_programada"]) == datetime.fromisoformat(nueva_fecha)
     assert data["semaforo"] == "programado"
 
     # desasignar
