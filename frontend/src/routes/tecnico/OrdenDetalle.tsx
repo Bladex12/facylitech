@@ -24,6 +24,7 @@ import { SEMAFORO_BADGE_CLASS, SEMAFORO_LABEL } from '../../domain/semaforo'
 import { mensajeError } from '../../lib/red'
 import { EvidenciasPapeleta } from './EvidenciasPapeleta'
 import { PRIORIDAD_CFG, TIPO_ORDEN_LABEL } from './etiquetas'
+import { BotonLlegue } from './BotonLlegue'
 import { reportarUbicacionEvento } from './hooks'
 
 type EstadoGuardado = 'guardando' | 'guardado' | 'error' | undefined
@@ -309,6 +310,8 @@ export function OrdenDetalle() {
           {errorAccion}
         </p>
       )}
+
+      {puedeIniciar && usuario && <BotonLlegue usuarioId={usuario.id} />}
 
       {puedeIniciar && (
         <button

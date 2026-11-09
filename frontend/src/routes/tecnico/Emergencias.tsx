@@ -27,7 +27,7 @@ import {
 } from '../../domain/tiempo'
 import { mensajeError, useAhora } from '../../lib/red'
 import { ESPECIALIDAD_COLOR, ESPECIALIDAD_LABEL, ESTADO_ASIGNACION_CFG } from './etiquetas'
-import { useAsignacionesPendientes, useMisOrdenes } from './hooks'
+import { reportarUbicacionEvento, useAsignacionesPendientes, useMisOrdenes } from './hooks'
 
 const MOTIVOS_RAPIDOS = [
   'Estoy atendiendo otra emergencia',
@@ -273,7 +273,11 @@ export function Emergencias() {
   }
 
   const aceptar = useMutation({
-    mutationFn: (a: AsignacionTecnico) => endpoints.asignaciones.aceptar(a.id),
+    mutationFn: (a: AsignacionTecnico) => {
+      // Tracking por eventos: la central ve desde dónde sale el técnico hacia la emergencia.
+      if (usuario) reportarUbicacionEvento(usuario.id)
+      return endpoints.asignaciones.aceptar(a.id)
+    },
     onSuccess: async (_res, a) => {
       refrescar()
       // Buscar la OT de emergencia creada al aceptar y llevar al técnico directo a ella.

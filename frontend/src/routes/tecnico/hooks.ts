@@ -48,14 +48,29 @@ export function obtenerUbicacion(timeoutMs = TIMEOUT_UBICACION_MS): Promise<Coor
   })
 }
 
+export type ResultadoUbicacion = 'enviada' | 'sin_gps' | 'error'
+
 /**
- * Tracking por eventos (Gantt 26-oct): se llama al Iniciar/Completar una OT.
+ * Lee el GPS una vez y lo envía al backend. Nunca lanza: devuelve qué pasó para
+ * que el botón "Llegué" pueda mostrarlo. 'sin_gps' = sin permiso o sin señal.
+ */
+export async function reportarUbicacion(usuarioId: string): Promise<ResultadoUbicacion> {
+  const coords = await obtenerUbicacion()
+  if (!coords) return 'sin_gps'
+  try {
+    await endpoints.usuarios.reportarUbicacion(usuarioId, coords)
+    return 'enviada'
+  } catch {
+    return 'error'
+  }
+}
+
+/**
+ * Tracking por eventos de botones (Gantt 26-oct): se llama al aceptar una
+ * emergencia, al marcar "Llegué" y al Iniciar/Completar una OT.
  * Fire-and-forget: no bloquea el flujo del técnico si falla el GPS o la red.
  * Nada de tracking continuo (fuera de alcance).
  */
 export function reportarUbicacionEvento(usuarioId: string): void {
-  void obtenerUbicacion().then((coords) => {
-    if (!coords) return
-    endpoints.usuarios.reportarUbicacion(usuarioId, coords).catch(() => {})
-  })
+  void reportarUbicacion(usuarioId)
 }
