@@ -1,2 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Archivos que se ejecutan dentro de contenedores Linux: siempre LF (CRLF rompe /bin/sh)
+*.sh text eol=lf
+Caddyfile text eol=lf
+Dockerfile text eol=lf
