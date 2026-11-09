@@ -44,6 +44,7 @@ from app.domain.enums import (
     TipoOrdenTrabajo,
 )
 from app.domain.pauta import items_del_mes
+from app.domain.replicacion import fecha_equivalente
 from app.domain.seguridad import hash_password
 from app.infrastructure.config import settings
 from app.infrastructure.db.models import (
@@ -412,10 +413,28 @@ _CRONOGRAMA = [
     (2, "JUAN", "TRA", _DIA),
 ]
 
-_CICLOS = [date(2026, 10, 7), date(2026, 11, 4)]  # miércoles de cada ciclo mensual
+# Primer ciclo: el cronograma que entregó la empresa (mié 07, jue 08, vie 09 de octubre).
+_PRIMER_CICLO = date(2026, 10, 7)
 
-# OTs del ciclo de octubre que quedan SIN completar -> semáforo VENCIDO (alerta SLA).
-_PENDIENTES_OCTUBRE = {"AET-A17", "AET-A18", "BIO-MC1"}
+# OTs del último ciclo ya iniciado que quedan SIN completar -> semáforo VENCIDO (alerta SLA).
+_PENDIENTES = {"AET-A17", "AET-A18", "BIO-MC1"}
+
+_MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+          "septiembre", "octubre", "noviembre", "diciembre"]
+
+
+def _ciclos(hoy: date) -> list[date]:
+    """Miércoles de inicio de cada ciclo mensual, desde octubre hasta el primero que
+    empieza después de hoy. "Será ideal reutilizar la misma data en un ciclo
+    siguiente" (la empresa): cada ciclo se obtiene con la misma regla del botón
+    "Replicar" (domain/replicacion.py), así el seed se mantiene vigente sin importar
+    cuándo se corra (los ciclos pasados quedan completados y siempre hay uno próximo).
+    """
+    ciclos = [_PRIMER_CICLO]
+    while ciclos[-1] <= hoy:
+        siguiente = fecha_equivalente(datetime.combine(ciclos[-1], time(12), _TZ))
+        ciclos.append(siguiente.date())
+    return ciclos
 
 
 def _repartir(dia: date, tramos, n: int) -> list[datetime]:
@@ -676,32 +695,42 @@ async def seed() -> None:
         ots: list[OtNueva] = []
         orden_global = {cod: i for i, cod in enumerate(equipos)}
 
-        # Ciclo de octubre (7–9): mayormente completado, salvo _PENDIENTES_OCTUBRE (vencidas).
-        for fecha, tec, cod, duracion in _plan_mantencion(_CICLOS[0]):
-            idx = orden_global[cod]
-            if cod in _PENDIENTES_OCTUBRE:
-                ots.append(OtNueva(fecha, TipoOrdenTrabajo.MANTENCION, PrioridadOrdenTrabajo.MEDIA,
-                                   EstadoOrdenTrabajo.PROGRAMADO, cod, tec,
-                                   "Mantención mensual (ciclo octubre). Pendiente: no se alcanzó a ejecutar."))
-                continue
-            inicio = fecha + timedelta(minutes=idx % 7)
-            fin = inicio + timedelta(minutes=duracion)
-            ots.append(OtNueva(
-                fecha, TipoOrdenTrabajo.MANTENCION, PrioridadOrdenTrabajo.MEDIA, EstadoOrdenTrabajo.COMPLETADO,
-                cod, tec, "Mantención mensual (ciclo octubre).", inicio, fin,
-                papeleta=dict(
-                    trabajo_realizado=_TRABAJOS[idx % len(_TRABAJOS)],
-                    falla_detectada=None if idx not in _PIEZAS else "Desgaste detectado en revisión de rutina.",
-                    piezas=_PIEZAS.get(idx, []),
-                    receptor_nombre=_EDIF[cod.split("-")[0]].contacto_nombre or "Conserjería",
-                    mes=10,
-                ),
-            ))
-
-        # Ciclo siguiente (4–6 nov): mismo patrón, programado.
-        for fecha, tec, cod, _dur in _plan_mantencion(_CICLOS[1]):
-            ots.append(OtNueva(fecha, TipoOrdenTrabajo.MANTENCION, PrioridadOrdenTrabajo.MEDIA,
-                               EstadoOrdenTrabajo.PROGRAMADO, cod, tec, "Mantención mensual (ciclo noviembre)."))
+        # Ciclos mensuales (ver _ciclos): lo que ya pasó, completado con su papeleta;
+        # lo que viene, programado. Del último ciclo iniciado quedan _PENDIENTES sin
+        # ejecutar -> vencidas (alerta de incumplimiento de SLA).
+        ciclos = _ciclos(hoy)
+        ultimo_iniciado = max((c for c in ciclos if c <= hoy), default=None)
+        for ciclo in ciclos:
+            nombre_ciclo = f"ciclo {_MESES[ciclo.month - 1]}"
+            for fecha, tec, cod, duracion in _plan_mantencion(ciclo):
+                idx = orden_global[cod]
+                if ciclo == ultimo_iniciado and cod in _PENDIENTES and fecha < ahora:
+                    ots.append(OtNueva(
+                        fecha, TipoOrdenTrabajo.MANTENCION, PrioridadOrdenTrabajo.MEDIA,
+                        EstadoOrdenTrabajo.PROGRAMADO, cod, tec,
+                        f"Mantención mensual ({nombre_ciclo}). Pendiente: no se alcanzó a ejecutar.",
+                    ))
+                    continue
+                inicio = fecha + timedelta(minutes=idx % 7)
+                fin = inicio + timedelta(minutes=duracion)
+                if fin > ahora:
+                    ots.append(OtNueva(fecha, TipoOrdenTrabajo.MANTENCION, PrioridadOrdenTrabajo.MEDIA,
+                                       EstadoOrdenTrabajo.PROGRAMADO, cod, tec,
+                                       f"Mantención mensual ({nombre_ciclo})."))
+                    continue
+                ots.append(OtNueva(
+                    fecha, TipoOrdenTrabajo.MANTENCION, PrioridadOrdenTrabajo.MEDIA,
+                    EstadoOrdenTrabajo.COMPLETADO, cod, tec, f"Mantención mensual ({nombre_ciclo}).",
+                    inicio, fin,
+                    papeleta=dict(
+                        trabajo_realizado=_TRABAJOS[(idx + ciclo.month) % len(_TRABAJOS)],
+                        falla_detectada=None if idx not in _PIEZAS or ciclo != _PRIMER_CICLO
+                        else "Desgaste detectado en revisión de rutina.",
+                        piezas=_PIEZAS.get(idx, []) if ciclo == _PRIMER_CICLO else [],
+                        receptor_nombre=_EDIF[cod.split("-")[0]].contacto_nombre or "Conserjería",
+                        mes=ciclo.month,
+                    ),
+                ))
 
         # OT de la emergencia histórica EM-001 (completada)
         em1 = emergencias["EM-001"].reportada_at
@@ -733,7 +762,7 @@ async def seed() -> None:
                     inicio_real=inicio_rep),
             OtNueva(_a_las(1, 10), TipoOrdenTrabajo.INSPECCION, PrioridadOrdenTrabajo.MEDIA,
                     EstadoOrdenTrabajo.PROGRAMADO, "AET-A01", "JUAN",
-                    "Inspección previa a la recertificación de noviembre (Pabellón A)."),
+                    "Inspección previa a la recertificación anual (Pabellón A)."),
             OtNueva(_a_las(3, 11), TipoOrdenTrabajo.PRIMERA_VISITA, PrioridadOrdenTrabajo.BAJA,
                     EstadoOrdenTrabajo.PROGRAMADO, "MUN-MC1", "MELVIN",
                     "Primera visita: levantamiento de montacargas (cantidad no coincide entre Excel y diagrama)."),
