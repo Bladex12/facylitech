@@ -1,0 +1,41 @@
+# Servidor web de producción (ver docs/despliegue.md).
+# DOMINIO = dominio público (ej. app.facylitech.cl) -> Caddy obtiene el
+# certificado HTTPS de Let's Encrypt solo. Con "localhost" o una IP usa un
+# certificado propio (el navegador pedirá aceptarlo).
+{$DOMINIO:localhost} {
+	encode zstd gzip
+
+	# API y fotos de evidencia -> backend
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+	handle /media/* {
+		reverse_proxy backend:8000
+	}
+	# Documentación interactiva de la API (Swagger)
+	handle /docs* {
+		reverse_proxy backend:8000
+	}
+	handle /openapi.json {
+		reverse_proxy backend:8000
+	}
+
+	# SPA: cualquier otra ruta (/operador/..., /tecnico/..., /login) -> index.html
+	handle {
+		root * /srv
+		# El service worker y el index nunca se cachean: así una nueva versión llega al celular.
+		@sinCache path /sw.js /registerSW.js /index.html /manifest.webmanifest
+		header @sinCache Cache-Control "no-cache"
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# GPS y cámara solo para este mismo sitio (los usan la PWA y el lector QR).
+		Permissions-Policy "geolocation=(self), camera=(self), microphone=()"
+	}
+}

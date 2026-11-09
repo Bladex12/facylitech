@@ -28,3 +28,6 @@ postgres-data/
 
 # Fotos de evidencia subidas en desarrollo (AlmacenamientoLocal)
 backend/media/
+
+# Despliegue
+.env.prod

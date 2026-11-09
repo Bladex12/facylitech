@@ -114,8 +114,20 @@ Tras 5 intentos fallidos en 15 minutos, el correo queda bloqueado un rato
 El seed carga los datos de simulación de la empresa
 ([`docs/datos-simulacion.md`](./docs/datos-simulacion.md)): 7 clientes, 10
 comunidades, 68 equipos (ascensores, montacargas y montaplatos), 3 técnicos y
-el cronograma de mantenciones de octubre. Las coordenadas, operador, contactos
-y pautas son simulados. Es idempotente: se puede volver a correr.
+los ciclos mensuales de mantención: parte del cronograma de la empresa (7 al 9 de
+octubre) y genera cada ciclo siguiente hasta el próximo, así que los datos siguen
+vigentes sin importar cuándo se corra. Las coordenadas, operador, contactos y
+pautas son simulados. Es idempotente: se puede volver a correr.
+
+## Despliegue en un servidor
+
+Ver [`docs/despliegue.md`](./docs/despliegue.md): Docker Compose con PostGIS,
+backend y Caddy (HTTPS automático, necesario para GPS y cámara en el celular).
+
+```bash
+cp .env.prod.example .env.prod   # completar DOMINIO, JWT_SECRET, POSTGRES_PASSWORD
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
 
 ## Comandos
 
@@ -126,7 +138,8 @@ y pautas son simulados. Es idempotente: se puede volver a correr.
 | `alembic upgrade head` | Aplica migraciones |
 | `alembic downgrade base` | Revierte todas las migraciones |
 | `alembic revision -m "mensaje"` | Nueva migración manual |
-| `python seed.py` | Carga datos de ejemplo (idempotente) |
+| `python seed.py` | Carga datos de ejemplo (idempotente; **borra** los datos existentes) |
+| `python crear_operador.py --nombre ... --email ...` | Crea o reactiva un operador (instalación real) |
 | `uvicorn app.main:app --reload --port 8000` | Levanta la API |
 | `pytest` | Corre los tests (requiere BD `facylitech_test`, ver abajo) |
 | `ruff check .` | Lint |
@@ -154,12 +167,17 @@ facylitech/
 ├── backend/        # FastAPI, Clean Architecture (domain/application/infrastructure/api)
 ├── frontend/       # React + Vite (rutas /operador y /tecnico)
 ├── docs/           # contratos de API, modelo ER, decisiones, avance, mockup/
-├── docker-compose.yml
-└── .env.example
+├── docker-compose.yml        # solo la BD, para desarrollo
+├── docker-compose.prod.yml   # despliegue completo (db + backend + Caddy)
+├── .env.example
+└── .env.prod.example
 ```
 
 ## Documentación
 
+- [`docs/manual-tecnico.docx`](./docs/manual-tecnico.docx) — manual técnico
+  (arquitectura, modelo de datos, API, reglas de negocio, despliegue).
+- [`docs/despliegue.md`](./docs/despliegue.md) — despliegue en un servidor.
 - [`docs/modelo-er.md`](./docs/modelo-er.md) — diagrama ER (Mermaid).
 - [`docs/decisiones.md`](./docs/decisiones.md) — decisiones de diseño ante
   ambigüedades del alcance.

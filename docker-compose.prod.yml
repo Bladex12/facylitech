@@ -1,0 +1,74 @@
+# Despliegue completo de Facylitech en un servidor (ver docs/despliegue.md):
+#   cp .env.prod.example .env.prod   # y completar JWT_SECRET, POSTGRES_PASSWORD, DOMINIO
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Servicios: db (PostgreSQL 16 + PostGIS), backend (FastAPI) y web (Caddy: sirve
+# el frontend, reenvía /api y /media al backend y entrega HTTPS). Solo `web`
+# expone puertos; la base de datos y la API quedan en la red interna.
+name: facylitech
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-facylitech}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env.prod}
+      POSTGRES_DB: ${POSTGRES_DB:-facylitech}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-facylitech} -d ${POSTGRES_DB:-facylitech}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-facylitech}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-facylitech}
+      ENVIRONMENT: production
+      # Web y API comparten dominio (Caddy), así que CORS solo necesita ese origen.
+      CORS_ORIGINS: https://${DOMINIO:-localhost}
+      TIMEZONE: America/Santiago
+      JWT_SECRET: ${JWT_SECRET:?Definir JWT_SECRET en .env.prod (>= 32 caracteres)}
+      JWT_TTL_OPERADOR_HORAS: ${JWT_TTL_OPERADOR_HORAS:-12}
+      JWT_TTL_TECNICO_HORAS: ${JWT_TTL_TECNICO_HORAS:-24}
+      SEED_PASSWORD: ${SEED_PASSWORD:-facylitech2026}
+      TIEMPO_RESPUESTA_EMERGENCIA_MIN: ${TIEMPO_RESPUESTA_EMERGENCIA_MIN:-5}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      MEDIA_DIR: /data/media
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      SUPABASE_BUCKET: ${SUPABASE_BUCKET:-evidencias}
+    volumes:
+      - media:/data/media
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_MOSTRAR_CUENTAS_DEMO: ${VITE_MOSTRAR_CUENTAS_DEMO:-false}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      DOMINIO: ${DOMINIO:-localhost}
+    ports:
+      - "${PUERTO_HTTP:-80}:80"
+      - "${PUERTO_HTTPS:-443}:443"
+      - "${PUERTO_HTTPS:-443}:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  db-data:
+  media:
+  caddy-data:
+  caddy-config:
