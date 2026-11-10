@@ -19,7 +19,7 @@ function token(nombre: string, respaldo: string): string {
  */
 async function generarEtiqueta(equipo: Ascensor, edificio: Edificio | undefined): Promise<string> {
   const navy = token('--color-navy', '#0d1b2a')
-  const accent = token('--color-accent', '#ea580c')
+  const accent = token('--color-accent', '#0284c7')
   const muted = token('--color-text-muted', '#6b7280')
   const canvas = document.createElement('canvas')
   canvas.width = 600

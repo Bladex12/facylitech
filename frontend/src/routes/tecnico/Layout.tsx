@@ -19,7 +19,7 @@ import { useNoLeidos } from '../../components/mensajes/useMensajes'
 import { useEnLinea } from '../../lib/red'
 import { useAsignacionesPendientes } from './hooks'
 
-function Badge({ n, tono }: { n: number; tono: 'rojo' | 'naranjo' }) {
+function Badge({ n, tono }: { n: number; tono: 'rojo' | 'acento' }) {
   if (n <= 0) return null
   return (
     <span
@@ -192,7 +192,7 @@ export function TecnicoLayout() {
                 )}
                 <span className="relative">
                   <Icon size={19} />
-                  <Badge n={badge} tono={to.endsWith('emergencias') ? 'rojo' : 'naranjo'} />
+                  <Badge n={badge} tono={to.endsWith('emergencias') ? 'rojo' : 'acento'} />
                 </span>
                 {label}
               </>

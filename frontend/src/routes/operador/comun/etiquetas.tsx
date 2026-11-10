@@ -44,7 +44,7 @@ export const TIPO_OT_CLASS: Record<TipoOrdenTrabajo, string> = {
 export const PRIORIDAD_CFG: Record<PrioridadOrdenTrabajo, { label: string; color: string }> = {
   baja: { label: 'Baja', color: 'text-slate-500' },
   media: { label: 'Media', color: 'text-amber-600' },
-  alta: { label: 'Alta', color: 'text-orange-600' },
+  alta: { label: 'Alta', color: 'text-amber-600' },
   critica: { label: 'Crítica', color: 'text-red-600' },
 }
 

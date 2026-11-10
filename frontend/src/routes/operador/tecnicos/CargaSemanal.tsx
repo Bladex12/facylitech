@@ -1,6 +1,6 @@
 import { DIAS_SEMANA } from '../../../domain/fechas'
 
-/** Mini barras de carga lunes-domingo; el día de hoy en naranjo. */
+/** Mini barras de carga lunes-domingo; el día de hoy en el color de acento. */
 export function CargaSemanal({
   porDia,
   hoy,

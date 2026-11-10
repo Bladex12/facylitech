@@ -20,7 +20,7 @@ export const TIPO_ORDEN_LABEL: Record<TipoOrdenTrabajo, string> = {
 export const PRIORIDAD_CFG: Record<PrioridadOrdenTrabajo, { label: string; color: string }> = {
   baja: { label: 'Baja', color: 'text-slate-500' },
   media: { label: 'Media', color: 'text-amber-600' },
-  alta: { label: 'Alta', color: 'text-orange-600' },
+  alta: { label: 'Alta', color: 'text-amber-600' },
   critica: { label: 'Crítica', color: 'text-red-600' },
 }
 
@@ -34,7 +34,7 @@ export const ESPECIALIDAD_LABEL: Record<Especialidad, string> = {
 
 export const ESPECIALIDAD_COLOR: Record<Especialidad, string> = {
   persona_atrapada: 'bg-red-600',
-  mecanica: 'bg-orange-500',
+  mecanica: 'bg-amber-500',
   corte_energia: 'bg-yellow-500',
   incendio: 'bg-rose-700',
   inundacion: 'bg-blue-600',

@@ -19,7 +19,7 @@ export const EMERGENCIA_LABEL: Record<Especialidad, string> = {
 /** Colores del mockup (EMERGENCY_COLORS). */
 export const EMERGENCIA_COLOR_CLASS: Record<Especialidad, string> = {
   persona_atrapada: 'bg-red-600',
-  mecanica: 'bg-orange-500',
+  mecanica: 'bg-amber-500',
   corte_energia: 'bg-yellow-500',
   incendio: 'bg-rose-700',
   inundacion: 'bg-blue-600',

@@ -10,7 +10,7 @@ import { iniciales } from '../../domain/cercania'
  */
 export const COLOR_MAPA = {
   navy: '#0D1B2A',
-  acento: '#EA580C',
+  acento: '#0284C7',
   critico: '#DC2626',
   advertencia: '#F59E0B',
   disponible: '#10B981',
