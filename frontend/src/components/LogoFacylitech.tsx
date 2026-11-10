@@ -1,0 +1,14 @@
+/** Logo de Facylitech (tres chevrones apilados) recreado como SVG vectorial. */
+export function LogoFacylitech({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 49.2 79.2" className={className} aria-hidden="true" focusable="false">
+      <g>
+        <polygon points="0,10.8 24.5,0 24.5,17.8 0,28.7" fill="#657483" />
+        <polygon points="24.5,0 49.2,10.8 49.2,28.7 24.5,17.8" fill="#002b50" />
+        <polygon points="0,35.3 24.5,25 24.5,42.8 0,54.5" fill="#00b5ff" />
+        <polygon points="24.5,25 49.2,35.3 49.2,54.5 24.5,42.8" fill="#002b50" />
+        <polygon points="0,62 24.5,50.7 24.5,67.8 0,79.2" fill="#657483" />
+      </g>
+    </svg>
+  )
+}

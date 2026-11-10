@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, KeyRound, Wifi, Zap } from 'lucide-react'
+import { KeyRound, Wifi, Zap } from 'lucide-react'
+import { LogoFacylitech } from '../../components/LogoFacylitech'
 import { useAuth } from '../../auth/useAuth'
 import { CambiarPassword } from '../../auth/CambiarPassword'
 import { endpoints } from '../../api/endpoints'
@@ -84,8 +85,8 @@ export function OperadorLayout() {
         style={{ background: 'var(--color-navy)' }}
       >
         <div className="mb-2 flex items-center gap-2.5 border-b border-white/[0.07] px-5 pb-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded bg-[var(--color-accent)]">
-            <Building2 size={13} className="text-white" />
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-white">
+            <LogoFacylitech className="h-5 w-auto" />
           </div>
           <span className="text-base font-bold tracking-wide text-white">Facylitech</span>
         </div>
