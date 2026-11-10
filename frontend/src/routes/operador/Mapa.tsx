@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Marker, Polyline, Popup, useMap } from 'react-leaflet'
+import { BotonPantallaCompleta, usePantallaCompleta } from '../../components/mapa/PantallaCompleta'
 import {
   AlertTriangle,
   Building2,
@@ -91,6 +92,7 @@ export function Mapa() {
   const [seleccion, setSeleccion] = useState<Seleccion>(null)
   const [enfoque, setEnfoque] = useState<{ puntos: Coordenadas[]; n: number } | null>(null)
   const panelRef = useRef<HTMLElement>(null)
+  const pantalla = usePantallaCompleta()
   const [resaltado, setResaltado] = useState<string | null>(null)
 
   const mapa = useQuery({
@@ -219,7 +221,10 @@ export function Mapa() {
 
       <div className="flex min-h-[520px] flex-1 flex-col gap-4 lg:flex-row">
         {/* Mapa */}
-        <div className="relative min-h-[420px] flex-1 overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
+        <div
+          ref={pantalla.ref}
+          className={`relative min-h-[420px] flex-1 overflow-hidden rounded-lg border border-[var(--color-border)] bg-white ${pantalla.claseCss}`}
+        >
           <MapaBase ajustarA={encuadre}>
             <Enfocar destino={enfoque} />
 
@@ -306,6 +311,38 @@ export function Mapa() {
           {mapa.isLoading && (
             <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-white/60">
               <Cargando texto="Cargando mapa…" className="rounded-lg border border-[var(--color-border)] bg-white" />
+            </div>
+          )}
+
+          <BotonPantallaCompleta
+            activa={pantalla.activa}
+            onClick={pantalla.alternar}
+            className="absolute top-3 right-3 z-[1000]"
+          />
+
+          {pantalla.activa && (
+            <div className="pointer-events-none absolute top-3 left-1/2 z-[1000] -translate-x-1/2">
+              {datos.emergencias.length > 0 ? (
+                <div
+                  role="alert"
+                  className="flex animate-pulse items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg"
+                >
+                  <Zap size={16} />
+                  {datos.emergencias.length === 1
+                    ? '1 emergencia activa'
+                    : `${datos.emergencias.length} emergencias activas`}
+                  <span className="font-normal opacity-90">
+                    · {datos.emergencias.map((e) => e.edificio_nombre).join(', ')}
+                  </span>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-[var(--color-border)] bg-white/95 px-3 py-1.5 text-xs text-[var(--color-text-muted)] shadow">
+                  Sin emergencias activas · actualizado{' '}
+                  {mapa.dataUpdatedAt
+                    ? new Date(mapa.dataUpdatedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    : '—'}
+                </div>
+              )}
             </div>
           )}
 

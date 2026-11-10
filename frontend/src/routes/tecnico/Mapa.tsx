@@ -7,6 +7,7 @@ import { ChevronRight, Crosshair, LocateOff, MapPin, Navigation } from 'lucide-r
 import { endpoints } from '../../api/endpoints'
 import type { Coordenadas, OrdenTrabajo } from '../../api/types'
 import { ErrorCarga } from '../../components/EstadosCarga'
+import { BotonPantallaCompleta, usePantallaCompleta } from '../../components/mapa/PantallaCompleta'
 import { MapaBase } from '../../components/mapa/MapaBase'
 import { iconoPunto, linksNavegacion } from '../../components/mapa/mapaUtils'
 import { agruparPorDia, esPendiente, paradasDelDia } from '../../domain/agrupacion'
@@ -55,6 +56,7 @@ export function Mapa() {
   const [vistaElegida, setVista] = useState<Vista | null>(null)
   const [seleccionId, setSeleccionId] = useState<string | null>(null)
   const [objetivo, setObjetivo] = useState<{ c: Coordenadas; n: number } | null>(null)
+  const pantalla = usePantallaCompleta()
 
   const { hoy, proximas } = useMemo(() => {
     const items = data?.items ?? []
@@ -126,7 +128,7 @@ export function Mapa() {
   const distancia = seleccion && posicion ? distanciaM(posicion, seleccion.c) : null
 
   return (
-    <div className="relative h-full min-h-[420px]">
+    <div ref={pantalla.ref} className={`relative h-full min-h-[420px] ${pantalla.claseCss}`}>
       <MapaBase className="absolute inset-0 z-0 [&_.leaflet-control-zoom]:hidden">
         <Encuadrar
           puntos={[
@@ -194,14 +196,17 @@ export function Mapa() {
             </button>
           ))}
         </div>
+        <div className="pointer-events-auto flex gap-2">
+        <BotonPantallaCompleta activa={pantalla.activa} onClick={pantalla.alternar} />
         <button
           onClick={() => posicion && setObjetivo((prev) => ({ c: posicion, n: (prev?.n ?? 0) + 1 }))}
           disabled={!posicion}
           aria-label="Centrar en mi posición"
-          className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-navy)] shadow-md disabled:text-slate-300"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-navy)] shadow-md disabled:text-slate-300"
         >
           {estadoGps === 'denegado' || estadoGps === 'no_disponible' ? <LocateOff size={18} /> : <Crosshair size={18} />}
         </button>
+        </div>
       </div>
 
       {(estadoGps === 'denegado' || estadoGps === 'no_disponible' || estadoGps === 'error') && (
