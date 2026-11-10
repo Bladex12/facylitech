@@ -102,8 +102,7 @@ El seed crea estas cuentas. Todas usan la contraseña **`facylitech2026`**
 | Técnico | Jorge Candia | `jorge.candia@facylitech.cl` | `/tecnico` |
 | Técnico | Juan Cubillos | `juan.cubillos@facylitech.cl` | `/tecnico` |
 
-Para mostrar en la pantalla de login botones que rellenan estas cuentas, define
-`VITE_MOSTRAR_CUENTAS_DEMO=true` en `frontend/.env` y reinicia `npm run dev`.
+El login no tiene accesos rápidos: se escribe el correo y la contraseña.
 **Déjala vacía en producción.**
 
 Tras 5 intentos fallidos en 15 minutos, el correo queda bloqueado un rato

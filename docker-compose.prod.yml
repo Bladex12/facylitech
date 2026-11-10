@@ -51,8 +51,6 @@ services:
   web:
     build:
       context: ./frontend
-      args:
-        VITE_MOSTRAR_CUENTAS_DEMO: ${VITE_MOSTRAR_CUENTAS_DEMO:-false}
     restart: unless-stopped
     depends_on:
       backend:

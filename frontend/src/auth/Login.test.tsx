@@ -76,9 +76,12 @@ describe('pantalla de login y guards', () => {
     expect(campo).toHaveAttribute('type', 'password')
   })
 
-  it('no muestra cuentas de demostración sin la variable de entorno', () => {
+  it('no muestra accesos rápidos ni panel de marca; solo el formulario', () => {
     montar('/login')
     expect(screen.queryByText('Cuentas de demostración')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Operador' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Papeleta digital')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
   })
 
   it('un técnico entra y va a /tecnico; guarda la sesión', async () => {

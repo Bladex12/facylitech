@@ -10,9 +10,6 @@ COPY . .
 # Ruta relativa: el navegador llama a la API en el mismo dominio (Caddy la reenvía).
 ARG VITE_API_URL=/api/v1
 ENV VITE_API_URL=$VITE_API_URL
-# Botones de cuentas demo en /login: solo para una demostración, nunca con datos reales.
-ARG VITE_MOSTRAR_CUENTAS_DEMO=false
-ENV VITE_MOSTRAR_CUENTAS_DEMO=$VITE_MOSTRAR_CUENTAS_DEMO
 RUN npm run build
 
 FROM caddy:2-alpine

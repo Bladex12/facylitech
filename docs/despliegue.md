@@ -55,8 +55,6 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod exec backend pyth
 
 Carga las 10 comunidades, 68 equipos, 3 técnicos y los ciclos de mantención
 (ver `docs/datos-simulacion.md`). Todas las cuentas quedan con `SEED_PASSWORD`.
-Para mostrar los botones de acceso rápido en `/login`, poner
-`VITE_MOSTRAR_CUENTAS_DEMO=true` en `.env.prod` y reconstruir (`up -d --build`).
 
 > `seed.py` **borra** todas las tablas de negocio antes de cargar. Nunca correrlo
 > sobre una instalación con datos reales.

@@ -267,8 +267,7 @@ en un celular real (cámara, GPS, `capture="environment"`).
 Reemplazado el selector de usuario por login con correo + contraseña contra
 `docs/contrato-auth.md`. **Qué quedó:** pantalla `/login` (mostrar/ocultar
 contraseña, estados de carga/error, bloqueo temporal 429 con cuenta regresiva,
-aviso de sesión expirada, responsive 390 px y escritorio, cuentas de
-demostración solo con `VITE_MOSTRAR_CUENTAS_DEMO=true`); sesión
+aviso de sesión expirada, responsive 390 px y escritorio; sin accesos rápidos desde 2026-11-09); sesión
 `{token, usuario, expira_at}` en `localStorage['facylitech.sesion']` validada
 con `GET /auth/me` al cargar (sin red se conserva; 401 o `expira_at` vencido la
 descartan); `Authorization: Bearer` en todo request; 401 -> vuelve a `/login`

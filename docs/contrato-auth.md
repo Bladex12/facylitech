@@ -97,11 +97,10 @@ los **valida contra el token** (nunca confía en ellos).
 
 - Ruta pública `/login`: formulario correo + contraseña (mostrar/ocultar
   contraseña, estados de carga y error, mensaje de bloqueo temporal en 429),
-  misma identidad visual del mockup (navy/naranjo, Barlow). Tras entrar
+  misma identidad visual del mockup (navy/celeste, Barlow). Tras entrar
   redirige a `/operador` o `/tecnico` según `usuario.rol`, o a la ruta que se
-  intentaba abrir. Se elimina el selector de cuentas; en desarrollo se puede
-  mostrar una fila de "cuentas de demostración" que solo rellena el formulario,
-  controlada por `VITE_MOSTRAR_CUENTAS_DEMO=true`.
+  intentaba abrir. Se elimina el selector de cuentas y, desde 2026-11-09, también los
+  accesos rápidos de demostración: el login es solo correo + contraseña.
 - Sesión en `localStorage` bajo `facylitech.sesion` =
   `{token, usuario, expira_at}`; se borra la clave vieja `facylitech.usuario`.
   `api/client.ts` agrega `Authorization: Bearer` a todo request; ante `401`

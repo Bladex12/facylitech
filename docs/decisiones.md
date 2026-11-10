@@ -388,13 +388,13 @@ Implementa la sección "Frontend" de `docs/contrato-auth.md`.
   contraseña", 10 caracteres sin caracteres ambiguos) -> pantalla final que
   muestra la contraseña una sola vez con botón Copiar, porque no hay correo
   para entregársela al técnico.
-- **Cuentas de demostración** solo con `VITE_MOSTRAR_CUENTAS_DEMO=true`; los
-  botones rellenan el formulario y no inician sesión solos. La clave del seed
-  está en el código del front únicamente para ese modo (documentado en
-  `frontend/.env.example`; no activar en producción).
-- **Panel de marca del login**: se reemplazaron las cifras fijas del selector
-  (12 ascensores, 6 edificios, 20 usuarios, ya desactualizadas) por tres
-  funciones del producto.
+- **Login sin accesos rápidos (2026-11-09)**: se quitaron los botones de cuentas
+  de demostración, la variable `VITE_MOSTRAR_CUENTAS_DEMO` y el panel de marca;
+  el login es solo el formulario. Los usuarios siguen existiendo en el backend
+  (seed) y se entra con correo y contraseña reales.
+- **Color de acento (2026-11-09)**: el naranjo `#EA580C` se reemplazó por celeste
+  `#0284C7` (hover `#0369A1`) en `index.css`; prioridad «alta» y emergencias
+  «mecánica» pasan a ámbar para no volver al naranjo.
 - **Matriz de permisos vs. vistas del técnico**: revisadas; solo usa
   `ordenes`, `papeletas`, `asignaciones`, `mensajes`, `edificios/{id}`,
   `ascensores/qr` y `ascensores/{id}/bitacora`, `usuarios/{id}/ubicacion`
